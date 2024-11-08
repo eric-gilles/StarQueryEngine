@@ -6,6 +6,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -17,6 +18,13 @@ import java.util.stream.Stream;
  * (Prédicat, Sujet, Objet), (Prédicat, Objet, Sujet), (Objet, Sujet, Prédicat) et (Objet, Prédicat, Sujet).
  */
 public class RDFHexaStore implements RDFStorage {
+    private HashMap<Integer, int []>SPO = new HashMap<>();
+    private HashMap<Integer, int []>PSO = new HashMap<>();
+    private HashMap<Integer, int []>OSP = new HashMap<>();
+    private HashMap<Integer, int []>POS = new HashMap<>();
+    private HashMap<Integer, int []>SOP = new HashMap<>();
+    private HashMap<Integer, int []>OPS = new HashMap<>();
+
     @Override
     public boolean add(RDFAtom atom) {
         throw new NotImplementedException();
