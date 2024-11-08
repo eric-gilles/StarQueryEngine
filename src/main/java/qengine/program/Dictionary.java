@@ -3,7 +3,7 @@ package qengine.program;
 import java.util.HashMap;
 
 public class Dictionary {
-    private final HashMap<Integer, String> dictionary;
+    private final HashMap<String, Integer> dictionary;
     private int nextId;
 
     public Dictionary() {
@@ -12,9 +12,15 @@ public class Dictionary {
     }
 
     public void add(String word) {
-        if (!dictionary.containsValue(word)) {
-            dictionary.put(nextId, word);
+        if (!dictionary.containsKey(word)) {
+            dictionary.put(word, nextId);
             nextId++;
         }
+    }
+    public Integer get(String key) {
+        if (!dictionary.containsKey(key)) {
+           return dictionary.get(key);
+        }
+        return null;
     }
 }
