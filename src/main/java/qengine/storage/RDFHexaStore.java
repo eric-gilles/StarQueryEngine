@@ -1,17 +1,12 @@
 package qengine.storage;
 
 import fr.boreal.model.logicalElements.api.*;
-import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
 import org.apache.commons.lang3.NotImplementedException;
-import org.jgrapht.alg.util.Pair;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 import qengine.program.Dictionary;
 
-import java.lang.reflect.Array;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Implémentation d'un HexaStore pour stocker des RDFAtom.
@@ -20,14 +15,13 @@ import java.util.stream.Stream;
  * (Prédicat, Sujet, Objet), (Prédicat, Objet, Sujet), (Objet, Sujet, Prédicat) et (Objet, Prédicat, Sujet).
  */
 public class RDFHexaStore implements RDFStorage {
-    // Structure de donnée à revoir, dans le cas ou plusieurs sujet on plusieurs prédicat (utilisé hashmap) et pareil pour les relations prédicats/objets
-    private HashMap<Integer, Pair<Integer, Integer>>SPO = new HashMap<>();
-    private HashMap<Integer, Pair<Integer, Integer>>PSO = new HashMap<>();
-    private HashMap<Integer, Pair<Integer, Integer>>OSP = new HashMap<>();
-    private HashMap<Integer, Pair<Integer, Integer>>POS = new HashMap<>();
-    private HashMap<Integer, Pair<Integer, Integer>>SOP = new HashMap<>();
-    private HashMap<Integer, Pair<Integer, Integer>>OPS = new HashMap<>();
-    private Dictionary dict = new Dictionary();
+    private final HashMap<Integer, HashMap<Integer, Set<Integer>>>SPO = new HashMap<>();
+    private final HashMap<Integer, HashMap<Integer, Set<Integer>>>PSO = new HashMap<>();
+    private final HashMap<Integer, HashMap<Integer, Set<Integer>>>OSP = new HashMap<>();
+    private final HashMap<Integer, HashMap<Integer, Set<Integer>>>POS = new HashMap<>();
+    private final HashMap<Integer, HashMap<Integer, Set<Integer>>>SOP = new HashMap<>();
+    private final HashMap<Integer, HashMap<Integer, Set<Integer>>>OPS = new HashMap<>();
+    private final Dictionary dict = new Dictionary();
     @Override
     public boolean add(RDFAtom atom) {
         String s = atom.getTripleSubject().label();
@@ -42,20 +36,56 @@ public class RDFHexaStore implements RDFStorage {
         Integer pIndex = dict.get(p);
         Integer oIndex = dict.get(o);
 
+        // SPO
+        SPO.computeIfAbsent(sIndex, k -> new HashMap<>())
+                .computeIfAbsent(pIndex, k -> new HashSet<>())
+                .add(oIndex);
 
-        SPO.put(sIndex, new Pair<>(pIndex, oIndex));
-        PSO.put(pIndex, new Pair<>(sIndex, oIndex));
-        OPS.put(oIndex, new Pair<>(pIndex, sIndex));
-        OSP.put(oIndex, new Pair<>(sIndex, pIndex));
-        POS.put(pIndex, new Pair<>(oIndex, sIndex));
-        SOP.put(sIndex, new Pair<>(oIndex, pIndex));
+        // PSO
+        PSO.computeIfAbsent(pIndex, k -> new HashMap<>())
+                .computeIfAbsent(sIndex, k -> new HashSet<>())
+                .add(oIndex);
+
+        // OSP
+        OSP.computeIfAbsent(oIndex, k -> new HashMap<>())
+                .computeIfAbsent(sIndex, k -> new HashSet<>())
+                .add(pIndex);
+
+        // POS
+        POS.computeIfAbsent(pIndex, k -> new HashMap<>())
+                .computeIfAbsent(oIndex, k -> new HashSet<>())
+                .add(sIndex);
+
+        // SOP
+        SOP.computeIfAbsent(sIndex, k -> new HashMap<>())
+                .computeIfAbsent(oIndex, k -> new HashSet<>())
+                .add(pIndex);
+
+        // OPS
+        OPS.computeIfAbsent(oIndex, k -> new HashMap<>())
+                .computeIfAbsent(pIndex, k -> new HashSet<>())
+                .add(sIndex);
+
+
         return true;
     }
 
     @Override
     public long size() {
-        throw new NotImplementedException();
+        long sum = 0L;
+
+        for (HashMap<Integer, Set<Integer>> predicates : SOP.values()) {
+            sum += 32L * predicates.size(); // Estimation de la taille des entrées de HashMap (32 octets par entrée)
+            for (Set<Integer> objects : predicates.values()) {
+                // Estimation de la surcharge pour un Set (environ 64 octets pour la structure interne)
+                sum += 64L;
+                // Taille de chaque Integer dans le Set (4 octets)
+                sum += (long) objects.size() * Integer.SIZE / 8;
+            }
+        }
+        return sum;
     }
+
 
     @Override
     public Iterator<Substitution> match(RDFAtom atom) {
