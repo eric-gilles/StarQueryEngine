@@ -35,7 +35,6 @@ public class RDFHexaStore implements RDFStorage {
         Integer sIndex = dict.get(s);
         Integer pIndex = dict.get(p);
         Integer oIndex = dict.get(o);
-
         // SPO
         SPO.computeIfAbsent(sIndex, k -> new HashMap<>())
                 .computeIfAbsent(pIndex, k -> new HashSet<>())
@@ -89,6 +88,63 @@ public class RDFHexaStore implements RDFStorage {
 
     @Override
     public Iterator<Substitution> match(RDFAtom atom) {
+        Term s = atom.getTripleSubject();
+        Term p = atom.getTriplePredicate();
+        Term o = atom.getTripleObject();
+        ArrayList<Substitution> result = new ArrayList<>();
+        if(s.isConstant() && p.isConstant() && o.isConstant()){
+//            SPO
+            Integer sIndex = dict.get(s.label());
+            Integer pIndex = dict.get(p.label());
+            Integer oIndex = dict.get(o.label());
+
+            HashSet<Integer> res = (HashSet<Integer>) SPO.get(sIndex).get(pIndex);
+            Optional<Integer> found = res.stream()
+                    .filter(index -> Objects.equals(index, oIndex))
+                    .findFirst();
+            if(found.isPresent()){
+//                Index trouvé
+            }
+
+        }
+        if (s.isVariable() && p.isConstant() && o.isConstant()){
+//            POS
+            Integer pIndex = dict.get(p.label());
+            Integer oIndex = dict.get(o.label());
+            HashSet<Integer> res = (HashSet<Integer>) POS.get(pIndex).get(oIndex);
+        }
+        if (s.isConstant() && p.isVariable() && o.isConstant()){
+//            OSP
+            Integer oIndex = dict.get(o.label());
+            Integer sIndex = dict.get(s.label());
+            HashSet<Integer> res = (HashSet<Integer>) OSP.get(oIndex).get(sIndex);
+
+        }
+        if (s.isVariable() && p.isVariable() && o.isConstant()){
+//            OPS
+            Integer oIndex = dict.get(p.label());
+            HashMap<Integer, Set<Integer>>  res = OPS.get(oIndex);
+        }
+        if(s.isConstant() && p.isConstant() && o.isVariable()){
+//            PSO
+            Integer pIndex = dict.get(p.label());
+            Integer sIndex = dict.get(s.label());
+            HashSet<Integer> res = (HashSet<Integer>) PSO.get(pIndex).get(sIndex);
+        }
+        if(s.isVariable() && p.isConstant() && o.isVariable()){
+//            PSO
+            Integer pIndex = dict.get(p.label());
+            HashMap<Integer, Set<Integer>>  res = PSO.get(pIndex);
+        }
+        if(s.isConstant() && p.isVariable() && o.isVariable()){
+//            SOP
+            Integer sIndex = dict.get(s.label());
+            HashMap<Integer, Set<Integer>> res = SOP.get(sIndex);
+        }
+        if(s.isVariable() && p.isVariable() && o.isVariable()){
+//            SPO
+//            On renvoie toutes les combinaisons (la hashmap)
+        }
         throw new NotImplementedException();
     }
 
