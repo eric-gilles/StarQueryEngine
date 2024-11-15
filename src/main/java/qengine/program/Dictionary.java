@@ -1,6 +1,7 @@
 package qengine.program;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class Dictionary {
     private final HashMap<String, Integer> dictionary;
@@ -23,4 +24,13 @@ public class Dictionary {
         }
         return null;
     }
+    public String getKey(Integer index) {
+        for (Map.Entry<String, Integer> entry : dictionary.entrySet()) {
+            if (entry.getValue().equals(index)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
 }
