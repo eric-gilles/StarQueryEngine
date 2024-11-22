@@ -7,19 +7,16 @@ import java.util.Map;
 
 public class Dictionary {
     private final HashMap<Term, Integer> dictionary;
-    private int nextId;
 
     public Dictionary() {
         this.dictionary = new HashMap<>();
-        this.nextId = 0;
     }
 
     public boolean add(Term term) {
         if (dictionary.containsKey(term)) {
             return false;
         }
-        dictionary.put(term, nextId);
-        nextId++;
+        dictionary.put(term, dictionary.size());
         return true;
     }
 
@@ -37,5 +34,9 @@ public class Dictionary {
             }
         }
         return null;
+    }
+
+    public Integer addAndGet(Term subject) {
+        return dictionary.computeIfAbsent(subject, k -> dictionary.size());
     }
 }
