@@ -99,9 +99,12 @@ public class RDFHexaStoreTest {
     @Test
     public void testMatchAtom() {
         RDFHexaStore store = new RDFHexaStore();
-        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1)); // RDFAtom(subject1, triple, object1)
-        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2)); // RDFAtom(subject2, triple, object2)
-        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_3)); // RDFAtom(subject1, triple, object3)
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
+        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2));
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_3));
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_2, OBJECT_3));
+        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
 
         // Test case 1 : Constante, Constante, Variable
         RDFAtom matchingAtom = new RDFAtom(SUBJECT_1, PREDICATE_1, VAR_X); // RDFAtom(subject1, predicate1, X)
@@ -113,13 +116,95 @@ public class RDFHexaStoreTest {
         firstResult.add(VAR_X, OBJECT_1);
         Substitution secondResult = new SubstitutionImpl();
         secondResult.add(VAR_X, OBJECT_3);
-
-        assertEquals(2, matchedList.size(), "There should be two matched RDFAtoms");
+        Substitution thirdResult = new SubstitutionImpl();
+        thirdResult.add(VAR_X, OBJECT_2);
+        assertEquals(3, matchedList.size(), "There should be two matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
         assertTrue(matchedList.contains(secondResult), "Missing substitution: " + secondResult);
+        assertTrue(matchedList.contains(thirdResult), "Missing substitution: " + secondResult);
+
+
+        matchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y); // RDFAtom(subject1, predicate1, X)
+        matchedAtoms = store.match(matchingAtom);
+        matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+        firstResult = new SubstitutionImpl();
+        firstResult.add(VAR_X,SUBJECT_1);
+        firstResult.add(VAR_Y,OBJECT_3);
+
+        secondResult = new SubstitutionImpl();
+        secondResult.add(VAR_X,SUBJECT_1);
+        secondResult.add(VAR_Y,OBJECT_1);
+
+        thirdResult = new SubstitutionImpl();
+        thirdResult.add(VAR_X,SUBJECT_1);
+        thirdResult.add(VAR_Y,OBJECT_2);
+
+        Substitution fourthResult = new SubstitutionImpl();
+        fourthResult.add(VAR_X,SUBJECT_2);
+        fourthResult.add(VAR_Y,OBJECT_2);
+
+        Substitution fifthResult = new SubstitutionImpl();
+        fifthResult.add(VAR_X,SUBJECT_2);
+        fifthResult.add(VAR_Y,OBJECT_3);
+        assertEquals(5, matchedList.size(), "There should be two matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
+        assertTrue(matchedList.contains(secondResult), "Missing substitution: " + secondResult);
+        assertTrue(matchedList.contains(thirdResult), "Missing substitution: " + secondResult);
+        assertTrue(matchedList.contains(fourthResult), "Missing substitution: " + fourthResult);
+        assertTrue(matchedList.contains(fifthResult), "Missing substitution: " + fifthResult);
+
+
+
+        matchingAtom = new RDFAtom(VAR_X, VAR_Y, VAR_Z);
+        matchedAtoms = store.match(matchingAtom);
+        matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+
+        firstResult = new SubstitutionImpl();
+        firstResult.add(VAR_X,SUBJECT_1);
+        firstResult.add(VAR_Y,PREDICATE_1);
+        firstResult.add(VAR_Z,OBJECT_1);
+
+
+        secondResult = new SubstitutionImpl();
+        secondResult.add(VAR_X,SUBJECT_2);
+        secondResult.add(VAR_Y,PREDICATE_1);
+        secondResult.add(VAR_Z,OBJECT_2);
+
+        thirdResult = new SubstitutionImpl();
+        thirdResult.add(VAR_X,SUBJECT_1);
+        thirdResult.add(VAR_Y,PREDICATE_1);
+        thirdResult.add(VAR_Z,OBJECT_3);
+
+        fourthResult = new SubstitutionImpl();
+        fourthResult.add(VAR_X,SUBJECT_1);
+        fourthResult.add(VAR_Y,PREDICATE_2);
+        fourthResult.add(VAR_Z,OBJECT_3);
+
+
+        fifthResult = new SubstitutionImpl();
+        fifthResult.add(VAR_X,SUBJECT_2);
+        fifthResult.add(VAR_Y,PREDICATE_1);
+        fifthResult.add(VAR_Z,OBJECT_3);
+
+        Substitution sixthResult = new SubstitutionImpl();
+        sixthResult.add(VAR_X,SUBJECT_1);
+        sixthResult.add(VAR_Y,PREDICATE_1);
+        sixthResult.add(VAR_Z,OBJECT_2);
+
+        assertEquals(6, matchedList.size(), "There should be two matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
+        assertTrue(matchedList.contains(secondResult), "Missing substitution: " + secondResult);
+        assertTrue(matchedList.contains(thirdResult), "Missing substitution: " + secondResult);
+        assertTrue(matchedList.contains(fourthResult), "Missing substitution: " + fourthResult);
+        assertTrue(matchedList.contains(fifthResult), "Missing substitution: " + fifthResult);
+        assertTrue(matchedList.contains(sixthResult), "Missing substitution: " + sixthResult);
 
         // Others cases
     }
+
 
     @Test
     @Disabled
