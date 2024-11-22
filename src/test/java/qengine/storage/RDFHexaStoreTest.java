@@ -6,6 +6,7 @@ import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.jupiter.api.Disabled;
 import qengine.model.RDFAtom;
+import qengine.model.StarQuery;
 import qengine.storage.RDFHexaStore;
 import org.junit.jupiter.api.Test;
 
@@ -209,7 +210,32 @@ public class RDFHexaStoreTest {
     @Test
     @Disabled
     public void testMatchStarQuery() {
-        throw new NotImplementedException();
+        RDFHexaStore store = new RDFHexaStore();
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
+        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2));
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_3));
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_2, OBJECT_3));
+        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
+        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
+
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, VAR_Y);
+        ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(firstMatchingAtom);
+        rdfAtoms.add(secondMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        vars.add(VAR_Y);
+        StarQuery q = new StarQuery("My star query",rdfAtoms,vars);
+        Iterator<Substitution> matchedAtoms = store.match(q);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        Substitution firstResult = new SubstitutionImpl();
+        firstResult.add(VAR_X, SUBJECT_1);
+        firstResult.add(VAR_Y,OBJECT_3);
+        assertEquals(1, matchedList.size(), "There should be two matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
     }
 
     // Vos autres tests d'HexaStore ici

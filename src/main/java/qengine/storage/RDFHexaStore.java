@@ -3,7 +3,6 @@ package qengine.storage;
 import fr.boreal.model.logicalElements.api.*;
 import fr.boreal.model.logicalElements.factory.impl.SameObjectTermFactory;
 import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
-import org.apache.commons.lang3.NotImplementedException;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 
@@ -32,6 +31,7 @@ public class RDFHexaStore implements RDFStorage {
         Term subject = atom.getTripleSubject();
         Term predicate = atom.getTriplePredicate();
         Term object = atom.getTripleObject();
+        if (subject.isVariable() || predicate.isVariable() || object.isVariable()) return false;
 
         dict.add(subject);
         dict.add(predicate);
@@ -87,100 +87,128 @@ public class RDFHexaStore implements RDFStorage {
         AtomMatchType atomMatchType = determineTermType(subject, predicate, object);
         switch (atomMatchType){
             case CONST_CONST_CONST -> { // Subject: Constant, Predicate: Constant, Object: Constant
-                if (spo.containsKey(sIndex) && spo.get(sIndex).containsKey(pIndex) && spo.get(sIndex).get(pIndex).contains(oIndex)) {
-                    substitutions.add(new SubstitutionImpl());
-                }
+                matchExact(spo, sIndex, pIndex, oIndex, substitutions);
             }
             case CONST_CONST_VAR -> { // Subject: Constant, Predicate: Constant, Object: Variable
-                if (spo.containsKey(sIndex) && spo.get(sIndex).containsKey(pIndex)) {
-                    for (Integer o : spo.get(sIndex).get(pIndex)) {
-                        addSubstitution(substitutions, object.label(), dict.getKey(o));
-                    }
-                }
+                match1Var(spo, sIndex, pIndex, object, substitutions);
             }
             case CONST_VAR_CONST -> { // Subject: Constant, Predicate: Variable, Object: Constant
-                if (spo.containsKey(sIndex)) {
-                    for (Map.Entry<Integer, Set<Integer>> entry : spo.get(sIndex).entrySet()) {
-                        Integer p = entry.getKey();
-                        if (entry.getValue().contains(oIndex)) {
-                            addSubstitution(substitutions, predicate.label(), dict.getKey(p));
-                        }
-                    }
-                }
+                match1Var(sop, sIndex, oIndex, predicate, substitutions);
             }
             case CONST_VAR_VAR -> { // Subject: Constant, Predicate: Variable, Object: Variable
-                if (spo.containsKey(sIndex)) {
-                    for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : spo.entrySet()) {
-                        Integer s = entry.getKey();
-                        if (sIndex.equals(s)) {
-                            for (Map.Entry<Integer, Set<Integer>> entry1 : entry.getValue().entrySet()) {
-                                Integer p = entry1.getKey();
-                                for (Integer o : entry1.getValue()) {
-                                    addSubstitution(substitutions, predicate.label(), dict.getKey(p));
-                                    addSubstitution(substitutions, object.label(), dict.getKey(o));
-                                }
-                            }
-                        }
-                    }
-                }
+                match2Var(spo, sIndex, predicate, object, substitutions);
             }
             case VAR_CONST_CONST -> { // Subject: Variable, Predicate: Constant, Object: Constant
-                if (pso.containsKey(pIndex) && pso.get(pIndex).containsKey(oIndex)) {
-                    for (Integer s : pso.get(pIndex).get(oIndex)) {
-                        addSubstitution(substitutions, subject.label(), dict.getKey(s));
-                    }
-                }
+                match1Var(pos, pIndex, oIndex, subject, substitutions);
             }
             case VAR_CONST_VAR -> // Subject: Variable, Predicate: Constant, Object: Variable
-                getSubstitutionsFor2Var(pso, sIndex, predicate, object, substitutions);
+                match2Var(pso, sIndex, predicate, object, substitutions);
 
             case VAR_VAR_CONST ->  // Subject: Variable, Predicate: Variable, Object: Constant
-                getSubstitutionsFor2Var(ops, oIndex, subject, predicate, substitutions);
+                match2Var(ops, oIndex, subject, predicate, substitutions);
 
             case VAR_VAR_VAR -> { // Subject: Variable, Predicate: Variable, Object: Variable
-                for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : spo.entrySet()) {
-                    Integer s = entry.getKey();
-                    for (Map.Entry<Integer, Set<Integer>> entry1 : entry.getValue().entrySet()) {
-                        Integer p = entry1.getKey();
-                        for (Integer o : entry1.getValue()) {
-                            addSubstitution(substitutions, subject.label(), dict.getKey(s));
-                            addSubstitution(substitutions, predicate.label(), dict.getKey(p));
-                            addSubstitution(substitutions, object.label(), dict.getKey(o));
-                        }
-                    }
-                }
+                match3Var(spo, subject, predicate, object, substitutions);
             }
             case null -> {}
             default -> {}
         }
         return substitutions.iterator();
     }
+    private void matchExact(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex, Integer thirdIndex, List<Substitution> substitutions) {
+        if (
+                hashMap.containsKey(firstIndex) &&
+                        hashMap.get(firstIndex).containsKey(secondIndex) &&
+                        hashMap.get(secondIndex).get(secondIndex).contains(thirdIndex)
+        ) {
+            substitutions.add(new SubstitutionImpl());
+        }
+    }
 
-    private void getSubstitutionsFor2Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex,
+    private void match1Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex,
+                           Term firstTerm, List<Substitution> substitutions){
+        if (hashMap.containsKey(firstIndex)) {
+            if (hashMap.get(firstIndex).containsKey(secondIndex)) {
+                for (Integer varIndex : spo.get(firstIndex).get(secondIndex)) {
+                    Substitution sub = new SubstitutionImpl();
+                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(firstTerm.label()), dict.getKey(varIndex));
+                }
+            }
+        }
+    }
+    private void match2Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex,
                                          Term firstTerm, Term secondTerm, List<Substitution> substitutions) {
         if (hashMap.containsKey(firstIndex)) {
-            for (Map.Entry<Integer, Set<Integer>> entry : ops.get(firstIndex).entrySet()) {
-                Integer p = entry.getKey();
-                for (Integer s : entry.getValue()) {
-                    addSubstitution(substitutions, firstTerm.label(), dict.getKey(s));
-                    addSubstitution(substitutions, secondTerm.label(), dict.getKey(p));
+            for (Map.Entry<Integer, Set<Integer>> entry : hashMap.get(firstIndex).entrySet()) {
+                Integer firstVarIndex = entry.getKey();
+                for (Integer secondVarIndex : entry.getValue()) {
+                    Substitution sub = new SubstitutionImpl();
+                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(firstTerm.label()), dict.getKey(firstVarIndex));
+                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(secondTerm.label()), dict.getKey(secondVarIndex));
+                }
+            }
+        }
+
+    }
+    private void match3Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap,
+                           Term firstTerm, Term secondTerm, Term thirdTerm, List<Substitution> substitutions) {
+        for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : spo.entrySet()) {
+            Integer s = entry.getKey();
+            for (Map.Entry<Integer, Set<Integer>> entry1 : entry.getValue().entrySet()) {
+                Integer p = entry1.getKey();
+                for (Integer o : entry1.getValue()) {
+                    Substitution sub = new SubstitutionImpl();
+                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(firstTerm.label()), dict.getKey(s));
+                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(secondTerm.label()), dict.getKey(p));
+                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(thirdTerm.label()), dict.getKey(o));
+                    substitutions.add(sub);
+
                 }
             }
         }
 
     }
 
-    private void addSubstitution(List<Substitution> substitutions, String termLabel, Term dictKey) {
-        Substitution substitution = new SubstitutionImpl();
-        substitution.add(SameObjectTermFactory.instance().createOrGetVariable(termLabel), dictKey);
-        substitutions.add(substitution);
-    }
-    
-
     @Override
     public Iterator<Substitution> match(StarQuery q) {
-        throw new NotImplementedException(); // TODO
+        List<Substitution> substitutions = new ArrayList<>();
+
+        for (RDFAtom atom : q.getRdfAtoms()) {
+            Iterator<Substitution> matchedAtoms = this.match(atom);
+            List<Substitution> matchedList = new ArrayList<>();
+            matchedAtoms.forEachRemaining(matchedList::add);
+
+            // Fusionner les substitutions existantes avec les nouvelles
+            substitutions = merge(substitutions, matchedList);
+        }
+
+        return substitutions.iterator();
     }
+
+    public List<Substitution> merge(List<Substitution> listA, List<Substitution> listB) {
+        List<Substitution> mergedList = new ArrayList<>(listA);
+        for(Substitution subA : listA){
+            for(Substitution subB: listB){
+                if(hasCommonVariables(subA, subB)){
+                    Optional<Substitution> mergedSub = subA.merged(subB);
+                } else {
+                    //Faut voir avec le reste des substitutions si aucune n'est commune
+                }
+            }
+        }
+        return mergedList;
+    }
+
+    // Vérifie si deux substitutions partagent des variables communes
+    private boolean hasCommonVariables(Substitution sub1, Substitution sub2) {
+        for (Variable var : sub1.keys()) {
+            if (sub2.keys().contains(var)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     @Override
     public Collection<Atom> getAtoms() {
