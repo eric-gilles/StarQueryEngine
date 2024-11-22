@@ -3,8 +3,6 @@ package qengine.storage;
 import fr.boreal.model.logicalElements.api.*;
 import fr.boreal.model.logicalElements.factory.impl.SameObjectTermFactory;
 import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
-import org.apache.commons.lang3.NotImplementedException;
-import org.eclipse.rdf4j.model.vocabulary.RDF;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 
@@ -82,11 +80,10 @@ public class RDFHexaStore implements RDFStorage {
         Integer oIndex = dict.get(object);
 
         AtomMatchType atomMatchType = determineTermType(subject, predicate, object);
-        // TODO: refactor this
+        System.out.println(atomMatchType);
         switch (atomMatchType){
             case CONST_CONST_CONST ->  // Subject: Constant, Predicate: Constant, Object: Constant
                 matchExact(spo, sIndex, pIndex, oIndex, substitutions);
-
             case CONST_CONST_VAR -> // Subject: Constant, Predicate: Constant, Object: Variable
                 match1Var(spo, sIndex, pIndex, object, substitutions);
 
@@ -103,7 +100,7 @@ public class RDFHexaStore implements RDFStorage {
                 match2Var(pso, pIndex, subject, object, substitutions);
 
             case VAR_VAR_CONST ->  // Subject: Variable, Predicate: Variable, Object: Constant
-                match2Var(ops, oIndex, subject, predicate, substitutions);
+                match2Var(ops, oIndex, predicate, subject, substitutions);
 
             case VAR_VAR_VAR -> // Subject: Variable, Predicate: Variable, Object: Variable
                 match3Var(spo, subject, predicate, object, substitutions);
@@ -128,8 +125,7 @@ public class RDFHexaStore implements RDFStorage {
                            Term firstTerm, List<Substitution> substitutions){
         if (hashMap.containsKey(firstIndex)) {
             if (hashMap.get(firstIndex).containsKey(secondIndex)) {
-                System.out.println(spo.get(firstIndex).get(secondIndex));
-                for (Integer varIndex : spo.get(firstIndex).get(secondIndex)) {
+                for (Integer varIndex : hashMap.get(firstIndex).get(secondIndex)) {
                     Substitution sub = new SubstitutionImpl();
                     sub.add(SameObjectTermFactory.instance().createOrGetVariable(firstTerm.label()), dict.getKey(varIndex));
                     substitutions.add(sub);
@@ -154,7 +150,7 @@ public class RDFHexaStore implements RDFStorage {
     }
     private void match3Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap,
                            Term firstTerm, Term secondTerm, Term thirdTerm, List<Substitution> substitutions) {
-        for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : spo.entrySet()) {
+        for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : hashMap.entrySet()) {
             Integer s = entry.getKey();
             for (Map.Entry<Integer, Set<Integer>> entry1 : entry.getValue().entrySet()) {
                 Integer p = entry1.getKey();
@@ -164,7 +160,6 @@ public class RDFHexaStore implements RDFStorage {
                     sub.add(SameObjectTermFactory.instance().createOrGetVariable(secondTerm.label()), dict.getKey(p));
                     sub.add(SameObjectTermFactory.instance().createOrGetVariable(thirdTerm.label()), dict.getKey(o));
                     substitutions.add(sub);
-
                 }
             }
         }
@@ -185,13 +180,6 @@ public class RDFHexaStore implements RDFStorage {
         }
         return substitutions.iterator();
     }
-
-    private void addSubstitution(List<Substitution> substitutions, String termLabel, Term dictKey) {
-        Substitution substitution = new SubstitutionImpl();
-        substitution.add(SameObjectTermFactory.instance().createOrGetVariable(termLabel), dictKey);
-        substitutions.add(substitution);
-    }
-
 
     public List<Substitution> merge(List<Substitution> listA, List<Substitution> listB) {
         List<Substitution> mergedList = new ArrayList<>(listA);
