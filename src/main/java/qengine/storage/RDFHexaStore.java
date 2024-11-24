@@ -31,6 +31,7 @@ public class RDFHexaStore implements RDFStorage {
         Term subject = atom.getTripleSubject();
         Term predicate = atom.getTriplePredicate();
         Term object = atom.getTripleObject();
+
         if (subject.isVariable() || predicate.isVariable() || object.isVariable()) return false;
 
         Integer sIndex = dict.addAndGet(subject);
@@ -38,31 +39,30 @@ public class RDFHexaStore implements RDFStorage {
         Integer oIndex = dict.addAndGet(object);
 
 
-        if (spo.containsKey(sIndex) && spo.get(sIndex).containsKey(pIndex) && spo.get(sIndex).get(pIndex).contains(oIndex)) return false;
+        if (spo.containsKey(sIndex) && spo.get(sIndex).containsKey(pIndex) && spo.get(sIndex).get(pIndex).contains(oIndex))
+            return false;
 
         size++;
 
-        addToAllIndex(sIndex, pIndex, oIndex);
-
-        return true;
+        return addToAllIndex(sIndex, pIndex, oIndex);
     }
 
-    private void addToAllIndex(Integer sIndex, Integer pIndex, Integer oIndex) {
-        addToIndex(spo, sIndex, pIndex, oIndex);
-        addToIndex(pso, pIndex, sIndex, oIndex);
-        addToIndex(ops, oIndex, pIndex, sIndex);
-        addToIndex(pos, pIndex, oIndex, sIndex);
-        addToIndex(sop, sIndex, oIndex, pIndex);
-        addToIndex(osp, oIndex, sIndex, pIndex);
+    private boolean addToAllIndex(Integer sIndex, Integer pIndex, Integer oIndex) {
+        return addToIndex(spo, sIndex, pIndex, oIndex) &&
+                addToIndex(pso, pIndex, sIndex, oIndex) &&
+                addToIndex(osp, oIndex, sIndex, pIndex) &&
+                addToIndex(pos, pIndex, oIndex, sIndex) &&
+                addToIndex(sop, sIndex, oIndex, pIndex) &&
+                addToIndex(ops, oIndex, pIndex, sIndex);
     }
 
-    private void addToIndex(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex, Integer thirdIndex) {
-        hashMap.computeIfAbsent(firstIndex, k -> new HashMap<>())
+     private boolean addToIndex(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex, Integer thirdIndex) {
+        return hashMap.computeIfAbsent(firstIndex, k -> new HashMap<>())
                 .computeIfAbsent(secondIndex, k -> new HashSet<>())
                 .add(thirdIndex);
     }
 
-    @Override
+     @Override
     public long size() {
         return size;
     }
@@ -80,61 +80,57 @@ public class RDFHexaStore implements RDFStorage {
         Integer oIndex = dict.get(object);
 
         AtomMatchType atomMatchType = determineTermType(subject, predicate, object);
-        System.out.println(atomMatchType);
-        switch (atomMatchType){
+        switch (atomMatchType) {
             case CONST_CONST_CONST ->  // Subject: Constant, Predicate: Constant, Object: Constant
-                matchExact(spo, sIndex, pIndex, oIndex, substitutions);
+                    matchExact(spo, sIndex, pIndex, oIndex, substitutions);
+
             case CONST_CONST_VAR -> // Subject: Constant, Predicate: Constant, Object: Variable
-                match1Var(spo, sIndex, pIndex, object, substitutions);
+                    match1Var(spo, sIndex, pIndex, object, substitutions);
 
             case CONST_VAR_CONST ->  // Subject: Constant, Predicate: Variable, Object: Constant
-                match1Var(sop, sIndex, oIndex, predicate, substitutions);
+                    match1Var(sop, sIndex, oIndex, predicate, substitutions);
 
             case CONST_VAR_VAR ->  // Subject: Constant, Predicate: Variable, Object: Variable
-                match2Var(spo, sIndex, predicate, object, substitutions);
+                    match2Var(spo, sIndex, predicate, object, substitutions);
 
             case VAR_CONST_CONST ->  // Subject: Variable, Predicate: Constant, Object: Constant
-                match1Var(pos, pIndex, oIndex, subject, substitutions);
+                    match1Var(pos, pIndex, oIndex, subject, substitutions);
 
             case VAR_CONST_VAR -> // Subject: Variable, Predicate: Constant, Object: Variable
-                match2Var(pso, pIndex, subject, object, substitutions);
+                    match2Var(pso, pIndex, subject, object, substitutions);
 
             case VAR_VAR_CONST ->  // Subject: Variable, Predicate: Variable, Object: Constant
-                match2Var(ops, oIndex, predicate, subject, substitutions);
+                    match2Var(ops, oIndex, predicate, subject, substitutions);
 
             case VAR_VAR_VAR -> // Subject: Variable, Predicate: Variable, Object: Variable
-                match3Var(spo, subject, predicate, object, substitutions);
+                    match3Var(spo, subject, predicate, object, substitutions);
 
-            case null -> {}
-            default -> {}
+            case null, default -> {}
         }
         return substitutions.iterator();
     }
+
     private void matchExact(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex,
                             Integer thirdIndex, List<Substitution> substitutions) {
-        if (
-                hashMap.containsKey(firstIndex) &&
-                        hashMap.get(firstIndex).containsKey(secondIndex) &&
-                        hashMap.get(secondIndex).get(secondIndex).contains(thirdIndex)
-        ) {
+        if (hashMap.containsKey(firstIndex) && hashMap.get(firstIndex).containsKey(secondIndex) &&
+                hashMap.get(secondIndex).get(secondIndex).contains(thirdIndex)) {
             substitutions.add(new SubstitutionImpl());
         }
     }
 
     private void match1Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex,
-                           Term firstTerm, List<Substitution> substitutions){
-        if (hashMap.containsKey(firstIndex)) {
-            if (hashMap.get(firstIndex).containsKey(secondIndex)) {
-                for (Integer varIndex : hashMap.get(firstIndex).get(secondIndex)) {
-                    Substitution sub = new SubstitutionImpl();
-                    sub.add(SameObjectTermFactory.instance().createOrGetVariable(firstTerm.label()), dict.getKey(varIndex));
-                    substitutions.add(sub);
-                }
+                           Term firstTerm, List<Substitution> substitutions) {
+        if (hashMap.containsKey(firstIndex) && hashMap.get(firstIndex).containsKey(secondIndex)) {
+            for (Integer varIndex : hashMap.get(firstIndex).get(secondIndex)) {
+                Substitution sub = new SubstitutionImpl();
+                sub.add(SameObjectTermFactory.instance().createOrGetVariable(firstTerm.label()), dict.getKey(varIndex));
+                substitutions.add(sub);
             }
         }
     }
+
     private void match2Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex,
-                                         Term firstTerm, Term secondTerm, List<Substitution> substitutions) {
+                           Term firstTerm, Term secondTerm, List<Substitution> substitutions) {
         if (hashMap.containsKey(firstIndex)) {
             for (Map.Entry<Integer, Set<Integer>> entry : hashMap.get(firstIndex).entrySet()) {
                 Integer firstVarIndex = entry.getKey();
@@ -146,8 +142,8 @@ public class RDFHexaStore implements RDFStorage {
                 }
             }
         }
-
     }
+
     private void match3Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap,
                            Term firstTerm, Term secondTerm, Term thirdTerm, List<Substitution> substitutions) {
         for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : hashMap.entrySet()) {
@@ -163,65 +159,6 @@ public class RDFHexaStore implements RDFStorage {
                 }
             }
         }
-
-    }
-
-    @Override
-    public Iterator<Substitution> match(StarQuery q) {
-        List<Substitution> substitutions = new ArrayList<>();
-
-        for (RDFAtom atom : q.getRdfAtoms()) {
-            Iterator<Substitution> matchedAtoms = this.match(atom);
-            List<Substitution> matchedList = new ArrayList<>();
-            matchedAtoms.forEachRemaining(matchedList::add);
-
-            // Fusionner les substitutions existantes avec les nouvelles
-            //substitutions = merge(substitutions, matchedList);
-        }
-        return substitutions.iterator();
-    }
-
-    public List<Substitution> merge(List<Substitution> listA, List<Substitution> listB) {
-        List<Substitution> mergedList = new ArrayList<>(listA);
-        for(Substitution subA : listA){
-            for(Substitution subB: listB){
-                if(hasCommonVariables(subA, subB)){
-                    Optional<Substitution> mergedSub = subA.merged(subB);
-                } else {
-                    //Faut voir avec le reste des substitutions si aucune n'est commune
-                }
-            }
-        }
-        return mergedList;
-    }
-
-    // Vérifie si deux substitutions partagent des variables communes
-    private boolean hasCommonVariables(Substitution sub1, Substitution sub2) {
-        for (Variable var : sub1.keys()) {
-            if (sub2.keys().contains(var)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    @Override
-    public Collection<Atom> getAtoms() {
-        List<Atom> atoms = new ArrayList<>();
-        for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : spo.entrySet()) {
-            int sIndex = entry.getKey();
-            Term subject = dict.getKey(sIndex);
-            for (Map.Entry<Integer, Set<Integer>> entry1 : entry.getValue().entrySet()) {
-                Integer pIndex = entry1.getKey();
-                Term predicate = dict.getKey(pIndex);
-                for (Integer oIndex : entry1.getValue()) {
-                    Term object = dict.getKey(oIndex);
-                    atoms.add(new RDFAtom(subject, predicate, object));
-                }
-            }
-        }
-        return atoms;
     }
 
     private AtomMatchType determineTermType(Term subject, Term predicate, Term object){
@@ -261,5 +198,63 @@ public class RDFHexaStore implements RDFStorage {
         VAR_CONST_VAR,
         VAR_VAR_CONST,
         VAR_VAR_VAR
+    }
+
+    @Override
+    public Iterator<Substitution> match(StarQuery q) {
+        List<Substitution> substitutions = new ArrayList<>();
+
+        for (RDFAtom atom : q.getRdfAtoms()) {
+            Iterator<Substitution> matchedAtoms = this.match(atom);
+            List<Substitution> matchedList = new ArrayList<>();
+            matchedAtoms.forEachRemaining(matchedList::add);
+
+            // Fusionner les substitutions existantes avec les nouvelles
+            //substitutions = merge(substitutions, matchedList);
+        }
+        return substitutions.iterator();
+    }
+
+    public List<Substitution> merge(List<Substitution> listA, List<Substitution> listB) {
+        List<Substitution> mergedList = new ArrayList<>(listA);
+        for (Substitution subA : listA) {
+            for (Substitution subB : listB) {
+                if (hasCommonVariables(subA, subB)) {
+                    Optional<Substitution> mergedSub = subA.merged(subB);
+                } else {
+                    //Faut voir avec le reste des substitutions si aucune n'est commune
+                }
+            }
+        }
+        return mergedList;
+    }
+
+    // Vérifie si deux substitutions partagent des variables communes
+    private boolean hasCommonVariables(Substitution sub1, Substitution sub2) {
+        for (Variable var : sub1.keys()) {
+            if (sub2.keys().contains(var)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    @Override
+    public Collection<Atom> getAtoms() {
+        List<Atom> atoms = new ArrayList<>();
+        for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : spo.entrySet()) {
+            int sIndex = entry.getKey();
+            Term subject = dict.getKey(sIndex);
+            for (Map.Entry<Integer, Set<Integer>> entry1 : entry.getValue().entrySet()) {
+                Integer pIndex = entry1.getKey();
+                Term predicate = dict.getKey(pIndex);
+                for (Integer oIndex : entry1.getValue()) {
+                    Term object = dict.getKey(oIndex);
+                    atoms.add(new RDFAtom(subject, predicate, object));
+                }
+            }
+        }
+        return atoms;
     }
 }
