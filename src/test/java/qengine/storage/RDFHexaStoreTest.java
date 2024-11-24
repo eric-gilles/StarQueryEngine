@@ -3,7 +3,6 @@ package qengine.storage;
 import fr.boreal.model.logicalElements.api.*;
 import fr.boreal.model.logicalElements.factory.impl.SameObjectTermFactory;
 import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
-import org.apache.commons.lang3.NotImplementedException;
 import org.junit.jupiter.api.Disabled;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
@@ -98,6 +97,18 @@ class RDFHexaStoreTest {
     }
 
     @Test
+    void testMatchNonExistingAtom() {
+        RDFHexaStore store = new RDFHexaStore();
+        RDFAtom matchingAtom = new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1);
+        Iterator<Substitution> matchedAtoms = store.match(matchingAtom);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        assertFalse(matchedAtoms.hasNext(), "There should be no matched RDFAtoms.");
+        assertTrue(matchedList.isEmpty(), "The list of matched RDFAtoms should be empty.");
+    }
+
+    @Test
     void testMatchAtom() {
         RDFHexaStore store = new RDFHexaStore();
         store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
@@ -107,7 +118,7 @@ class RDFHexaStoreTest {
         store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
         store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
 
-        // Test case 1 : Constante, Constante, Variable
+
         testMatchAtom1(store);// Test case 1 : Constante, Constante, Variable
 
         testMatchAtom2(store); // Test case 2 : Constante, Variable, Constante
@@ -122,8 +133,6 @@ class RDFHexaStoreTest {
 
         testMatchAtom7(store); // Test case 7 : Variable, Variable, Variable
     }
-
-
 
     void testMatchAtom1(RDFHexaStore store){ // Test case 1 : Constante, Constante, Variable
         RDFAtom matchingAtom = new RDFAtom(SUBJECT_1, PREDICATE_1, VAR_X); // RDFAtom(subject1, predicate1, X)
@@ -308,7 +317,7 @@ class RDFHexaStoreTest {
 
     @Test
     @Disabled
-    public void testMatchStarQuery() {
+    void testMatchStarQuery() {
         RDFHexaStore store = new RDFHexaStore();
         store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
         store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2));
@@ -336,6 +345,4 @@ class RDFHexaStoreTest {
         assertEquals(1, matchedList.size(), "There should be two matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
     }
-
-    // Vos autres tests d'HexaStore ici
 }
