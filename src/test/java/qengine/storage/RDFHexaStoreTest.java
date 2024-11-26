@@ -3,6 +3,7 @@ package qengine.storage;
 import fr.boreal.model.logicalElements.api.*;
 import fr.boreal.model.logicalElements.factory.impl.SameObjectTermFactory;
 import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.jupiter.api.Disabled;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
@@ -108,6 +109,7 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.isEmpty(), "The list of matched RDFAtoms should be empty.");
     }
 
+
     @Test
     void testMatchAtom() {
         RDFHexaStore store = new RDFHexaStore();
@@ -118,6 +120,8 @@ class RDFHexaStoreTest {
         store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
         store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
 
+
+        testMatchAtom0(store);// Test case 0 : No Variables
 
         testMatchAtom1(store);// Test case 1 : Constante, Constante, Variable
 
@@ -132,6 +136,17 @@ class RDFHexaStoreTest {
         testMatchAtom6(store); // Test case 6 : Variable, Variable, Constante
 
         testMatchAtom7(store); // Test case 7 : Variable, Variable, Variable
+    }
+
+    void testMatchAtom0(RDFHexaStore store) {
+        RDFAtom matchingAtom = new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1);
+        Iterator<Substitution> matchedAtoms = store.match(matchingAtom);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+        Substitution firstResult = new SubstitutionImpl();
+
+        assertEquals(1, matchedList.size(), "There should be three matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
     }
 
     void testMatchAtom1(RDFHexaStore store){ // Test case 1 : Constante, Constante, Variable
@@ -316,8 +331,7 @@ class RDFHexaStoreTest {
     }
 
     @Test
-    @Disabled
-    void testMatchStarQuery() {
+    public void testMatchStarQuery() {
         RDFHexaStore store = new RDFHexaStore();
         store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
         store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2));
@@ -326,14 +340,24 @@ class RDFHexaStoreTest {
         store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
         store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
 
-        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
-        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, VAR_Y);
+        testMatchStarQueryMultipleVars1(store);
+        testMatchStarQueryMultipleVars2(store);
+        testMatchStarQuery1(store);
+        testMatchStarQuery2(store);
+        testMatchStarQuery3(store);
+        testMatchStarQuery4(store);
+
+    }
+    public void testMatchStarQueryMultipleVars1(RDFHexaStore store){
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_3);
         ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
         rdfAtoms.add(firstMatchingAtom);
         rdfAtoms.add(secondMatchingAtom);
         ArrayList<Variable> vars = new ArrayList<>();
         vars.add(VAR_X);
         vars.add(VAR_Y);
+
         StarQuery q = new StarQuery("My star query", rdfAtoms, vars);
         Iterator<Substitution> matchedAtoms = store.match(q);
         List<Substitution> matchedList = new ArrayList<>();
@@ -341,8 +365,172 @@ class RDFHexaStoreTest {
 
         Substitution firstResult = new SubstitutionImpl();
         firstResult.add(VAR_X, SUBJECT_1);
-        firstResult.add(VAR_Y, OBJECT_3);
-        assertEquals(1, matchedList.size(), "There should be two matched RDFAtoms");
+        firstResult.add(VAR_Y, OBJECT_1);
+
+        Substitution secondResult = new SubstitutionImpl();
+        secondResult.add(VAR_X, SUBJECT_1);
+        secondResult.add(VAR_Y, OBJECT_2);
+        Substitution thirdResult = new SubstitutionImpl();
+        thirdResult.add(VAR_X, SUBJECT_1);
+        thirdResult.add(VAR_Y, OBJECT_3);
+
+        assertEquals(3, matchedList.size(), "There should be one matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
+        assertTrue(matchedList.contains(secondResult), "Missing substitution: " + secondResult);
+        assertTrue(matchedList.contains(thirdResult), "Missing substitution: " + thirdResult);
+    }
+    public void testMatchStarQueryMultipleVars2(RDFHexaStore store){
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, VAR_Z, OBJECT_3);
+        ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(firstMatchingAtom);
+        rdfAtoms.add(secondMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        vars.add(VAR_Y);
+        vars.add(VAR_Z);
+
+
+        StarQuery q = new StarQuery("My star query", rdfAtoms, vars);
+        Iterator<Substitution> matchedAtoms = store.match(q);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        Substitution one = new SubstitutionImpl();
+        Substitution two = new SubstitutionImpl();
+        Substitution three = new SubstitutionImpl();
+        Substitution four = new SubstitutionImpl();
+        Substitution five = new SubstitutionImpl();
+        Substitution six = new SubstitutionImpl();
+        Substitution seven = new SubstitutionImpl();
+        Substitution eight = new SubstitutionImpl();
+
+        one.add(VAR_X, SUBJECT_1);
+        one.add(VAR_Z, PREDICATE_1);
+        one.add(VAR_Y, OBJECT_1);
+
+
+        two.add(VAR_X, SUBJECT_1 );
+        two.add(VAR_Z, PREDICATE_2);
+        two.add(VAR_Y, OBJECT_1);
+
+        three.add(VAR_X, SUBJECT_2 );
+        three.add(VAR_Z, PREDICATE_1);
+        three.add(VAR_Y, OBJECT_2);
+
+        four.add(VAR_X, SUBJECT_1);
+        four.add(VAR_Z, PREDICATE_1);
+        four.add(VAR_Y, OBJECT_3);
+
+
+        five.add(VAR_X, SUBJECT_1);
+        five.add(VAR_Z, PREDICATE_2);
+        five.add(VAR_Y, OBJECT_3);
+
+        six.add(VAR_X, SUBJECT_1);
+        six.add(VAR_Z, PREDICATE_1);
+        six.add(VAR_Y, OBJECT_2);
+
+        seven.add(VAR_X, SUBJECT_1);
+        seven.add(VAR_Z, PREDICATE_2);
+        seven.add(VAR_Y, OBJECT_2);
+
+        eight.add(VAR_X, SUBJECT_2);
+        eight.add(VAR_Z, PREDICATE_1);
+        eight.add(VAR_Y, OBJECT_3);
+
+
+        assertEquals(8, matchedList.size(), "There should be 8 matched RDFAtoms");
+        assertTrue(matchedList.contains(one), "Missing substitution: " + one);
+        assertTrue(matchedList.contains(two), "Missing substitution: " + two);
+        assertTrue(matchedList.contains(three), "Missing substitution: " + three);
+        assertTrue(matchedList.contains(four), "Missing substitution: " + four);
+        assertTrue(matchedList.contains(five), "Missing substitution: " + five);
+        assertTrue(matchedList.contains(six), "Missing substitution: " + six);
+        assertTrue(matchedList.contains(seven), "Missing substitution: " + seven);
+        assertTrue(matchedList.contains(eight), "Missing substitution: " + eight);
+
+    }
+
+    public void testMatchStarQuery1(RDFHexaStore store){
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_3);
+        ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(firstMatchingAtom);
+        rdfAtoms.add(secondMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        StarQuery q = new StarQuery("My star query", rdfAtoms, vars);
+        Iterator<Substitution> matchedAtoms = store.match(q);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        Substitution firstResult = new SubstitutionImpl();
+        firstResult.add(VAR_X, SUBJECT_1);
+        assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
     }
+
+    public void testMatchStarQuery2(RDFHexaStore store){
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_1);
+        ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(firstMatchingAtom);
+        rdfAtoms.add(secondMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        StarQuery q = new StarQuery("My star query", rdfAtoms, vars);
+        Iterator<Substitution> matchedAtoms = store.match(q);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        Substitution firstResult = new SubstitutionImpl();
+        assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
+    }
+
+    public void testMatchStarQuery3(RDFHexaStore store){
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_2);
+
+        ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(firstMatchingAtom);
+        rdfAtoms.add(secondMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        StarQuery q = new StarQuery("My star query", rdfAtoms, vars);
+        Iterator<Substitution> matchedAtoms = store.match(q);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        Substitution firstResult = new SubstitutionImpl();
+        firstResult.add(VAR_X, SUBJECT_1);
+        assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
+    }
+    public void testMatchStarQuery4(RDFHexaStore store){
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_2);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_3);
+
+        ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(firstMatchingAtom);
+        rdfAtoms.add(secondMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        StarQuery q = new StarQuery("My star query", rdfAtoms, vars);
+        Iterator<Substitution> matchedAtoms = store.match(q);
+        List<Substitution> matchedList = new ArrayList<>();
+        matchedAtoms.forEachRemaining(matchedList::add);
+
+        Substitution firstResult = new SubstitutionImpl();
+        firstResult.add(VAR_X, SUBJECT_1);
+        Substitution secondResult = new SubstitutionImpl();
+        secondResult.add(VAR_X, SUBJECT_2);
+        assertEquals(2, matchedList.size(), "There should be one matched RDFAtoms");
+        assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
+        assertTrue(matchedList.contains(secondResult), "Missing element: " + secondResult);
+
+    }
+
+    // Vos autres tests d'HexaStore ici
 }

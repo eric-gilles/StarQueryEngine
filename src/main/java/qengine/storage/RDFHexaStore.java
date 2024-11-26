@@ -62,7 +62,7 @@ public class RDFHexaStore implements RDFStorage {
                 .add(thirdIndex);
     }
 
-     @Override
+    @Override
     public long size() {
         return size;
     }
@@ -83,7 +83,6 @@ public class RDFHexaStore implements RDFStorage {
         switch (atomMatchType) {
             case CONST_CONST_CONST ->  // Subject: Constant, Predicate: Constant, Object: Constant
                     matchExact(spo, sIndex, pIndex, oIndex, substitutions);
-
             case CONST_CONST_VAR -> // Subject: Constant, Predicate: Constant, Object: Variable
                     match1Var(spo, sIndex, pIndex, object, substitutions);
 
@@ -98,7 +97,6 @@ public class RDFHexaStore implements RDFStorage {
 
             case VAR_CONST_VAR -> // Subject: Variable, Predicate: Constant, Object: Variable
                     match2Var(pso, pIndex, subject, object, substitutions);
-
             case VAR_VAR_CONST ->  // Subject: Variable, Predicate: Variable, Object: Constant
                     match2Var(ops, oIndex, predicate, subject, substitutions);
 
@@ -113,7 +111,7 @@ public class RDFHexaStore implements RDFStorage {
     private void matchExact(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap, Integer firstIndex, Integer secondIndex,
                             Integer thirdIndex, List<Substitution> substitutions) {
         if (hashMap.containsKey(firstIndex) && hashMap.get(firstIndex).containsKey(secondIndex) &&
-                hashMap.get(secondIndex).get(secondIndex).contains(thirdIndex)) {
+                hashMap.get(firstIndex).get(secondIndex).contains(thirdIndex)) {
             substitutions.add(new SubstitutionImpl());
         }
     }
@@ -142,8 +140,8 @@ public class RDFHexaStore implements RDFStorage {
                 }
             }
         }
-    }
 
+    }
     private void match3Var(HashMap<Integer, HashMap<Integer, Set<Integer>>> hashMap,
                            Term firstTerm, Term secondTerm, Term thirdTerm, List<Substitution> substitutions) {
         for (Map.Entry<Integer, HashMap<Integer, Set<Integer>>> entry : hashMap.entrySet()) {
@@ -159,85 +157,97 @@ public class RDFHexaStore implements RDFStorage {
                 }
             }
         }
-    }
 
-    private AtomMatchType determineTermType(Term subject, Term predicate, Term object){
-        if (!subject.isVariable() && !predicate.isVariable() && !object.isVariable()) { //Const Const Const
-            return AtomMatchType.CONST_CONST_CONST;
-        }
-        else if (!subject.isVariable() && !predicate.isVariable() && object.isVariable()) { //Const Const Var
-            return AtomMatchType.CONST_CONST_VAR;
-        }
-        else if (!subject.isVariable() && predicate.isVariable() && !object.isVariable()) { //Const Var Const
-            return AtomMatchType.CONST_VAR_CONST;
-        }
-        else if (!subject.isVariable() && predicate.isVariable() && object.isVariable()) { //Const Var Var
-            return AtomMatchType.CONST_VAR_VAR;
-        }
-        else if (subject.isVariable() && !predicate.isVariable() && !object.isVariable()) { //Var Const Const
-            return AtomMatchType.VAR_CONST_CONST;
-        }
-        else if (subject.isVariable() && !predicate.isVariable() && object.isVariable()) { //Var Const Var
-            return AtomMatchType.VAR_CONST_VAR;
-        }
-        else if (subject.isVariable() && predicate.isVariable() && !object.isVariable()) { //Var Var Const
-            return AtomMatchType.VAR_VAR_CONST;
-        }
-        else if (subject.isVariable() && predicate.isVariable() && object.isVariable()) { //Var Var Var
-            return AtomMatchType.VAR_VAR_VAR;
-        }
-        return null;
-    }
-
-    private enum AtomMatchType {
-        CONST_CONST_CONST,
-        CONST_CONST_VAR,
-        CONST_VAR_CONST,
-        CONST_VAR_VAR,
-        VAR_CONST_CONST,
-        VAR_CONST_VAR,
-        VAR_VAR_CONST,
-        VAR_VAR_VAR
     }
 
     @Override
     public Iterator<Substitution> match(StarQuery q) {
+        Collection<Variable> vars = q.getAnswerVariables();
         List<Substitution> substitutions = new ArrayList<>();
-
         for (RDFAtom atom : q.getRdfAtoms()) {
             Iterator<Substitution> matchedAtoms = this.match(atom);
             List<Substitution> matchedList = new ArrayList<>();
             matchedAtoms.forEachRemaining(matchedList::add);
+//            substitutions = merge(substitutions, matchedList);
+            substitutions = mergeGeneral(substitutions, matchedList);
 
-            // Fusionner les substitutions existantes avec les nouvelles
-            //substitutions = merge(substitutions, matchedList);
         }
+        if (substitutions.isEmpty()) substitutions.add(new SubstitutionImpl());
         return substitutions.iterator();
     }
+    //Merge simple (selon 1 variable)
+   /* public List<Substitution> merge(List<Substitution> substitutions, List<Substitution> subFromAtom) {
+        ArrayList<Substitution> result = new ArrayList<>();
+        if (subFromAtom.isEmpty()) {
+            result.add(new SubstitutionImpl());
+            return result;
+        }
+        if (substitutions.isEmpty()){
+            return subFromAtom;
+        }
 
-    public List<Substitution> merge(List<Substitution> listA, List<Substitution> listB) {
-        List<Substitution> mergedList = new ArrayList<>(listA);
-        for (Substitution subA : listA) {
-            for (Substitution subB : listB) {
-                if (hasCommonVariables(subA, subB)) {
-                    Optional<Substitution> mergedSub = subA.merged(subB);
-                } else {
-                    //Faut voir avec le reste des substitutions si aucune n'est commune
+        for (Substitution sub : subFromAtom) {
+            if (substitutions.contains(sub)) {
+                result.add(sub);
+            }
+        }
+        if (result.isEmpty()) {
+            result.add(new SubstitutionImpl());
+            return result;
+        }
+        return result;
+    }*/
+    //merge complexe (selon plusieurs variables)
+    public List<Substitution> mergeGeneral(
+            List<Substitution> substitutions,
+            List<Substitution> subFromAtom) {
+        ArrayList<Substitution> res = new ArrayList<>();
+
+        // Cas trivial :
+        if (substitutions.isEmpty()) return subFromAtom;
+
+        // Parcourir toutes les combinaisons
+        for (Substitution subA : subFromAtom) {
+            for (Substitution subB : substitutions) {
+                Map<Variable, Term> mapSubA = subA.toMap();
+                Map<Variable, Term> mapSubB = subB.toMap();
+                Map<Variable, Term> mergedMap = new HashMap<>(mapSubA); //Map qui stock les variables pour la fusion
+
+                boolean isCompatible = true;
+
+                // Vérifier la compatibilité avec les variables communes
+                for (Map.Entry<Variable, Term> entry : mapSubB.entrySet()) {
+                    Variable var = entry.getKey();
+                    Term value = entry.getValue();
+
+                    if (mapSubA.containsKey(var)) {
+                        // Si la variable est commune, vérifier la compatibilité
+                        if (!mapSubA.get(var).equals(value)) {
+                            isCompatible = false; // Conflit détecté
+                            break;
+                        }
+                    } else {
+                        // Sinon, ajouter la variable dans la fusion (pas de conflit)
+                        mergedMap.put(var, value);
+                    }
+                }
+
+                if (isCompatible) {
+                    // Créer une nouvelle substitution à partir de la fusion
+                    Substitution mergedSub = new SubstitutionImpl();
+                    for (Map.Entry<Variable, Term> entry : mergedMap.entrySet()) {
+                        mergedSub.add(entry.getKey(), entry.getValue());
+                    }
+                    res.add(mergedSub);
                 }
             }
         }
-        return mergedList;
+        return res;
     }
 
-    // Vérifie si deux substitutions partagent des variables communes
-    private boolean hasCommonVariables(Substitution sub1, Substitution sub2) {
-        for (Variable var : sub1.keys()) {
-            if (sub2.keys().contains(var)) {
-                return true;
-            }
-        }
-        return false;
-    }
+
+
+
 
 
     @Override
@@ -256,5 +266,34 @@ public class RDFHexaStore implements RDFStorage {
             }
         }
         return atoms;
+    }
+
+    private AtomMatchType determineTermType(Term subject, Term predicate, Term object) {
+        if (!subject.isVariable() && !predicate.isVariable() && !object.isVariable()) { //Const Const Const
+            return AtomMatchType.CONST_CONST_CONST;
+        } else if (!subject.isVariable() && !predicate.isVariable() && object.isVariable()) { //Const Const Var
+            return AtomMatchType.CONST_CONST_VAR;
+        } else if (!subject.isVariable() && predicate.isVariable() && !object.isVariable()) { //Const Var Const
+            return AtomMatchType.CONST_VAR_CONST;
+        } else if (!subject.isVariable() && predicate.isVariable() && object.isVariable()) { //Const Var Var
+            return AtomMatchType.CONST_VAR_VAR;
+        } else if (subject.isVariable() && !predicate.isVariable() && !object.isVariable()) { //Var Const Const
+            return AtomMatchType.VAR_CONST_CONST;
+        } else if (subject.isVariable() && !predicate.isVariable() && object.isVariable()) { //Var Const Var
+            return AtomMatchType.VAR_CONST_VAR;
+        } else if (subject.isVariable() && predicate.isVariable() && !object.isVariable()) { //Var Var Const
+            return AtomMatchType.VAR_VAR_CONST;
+        } else return AtomMatchType.VAR_VAR_VAR; // Var Var Var
+    }
+
+    private enum AtomMatchType {
+        CONST_CONST_CONST,
+        CONST_CONST_VAR,
+        CONST_VAR_CONST,
+        CONST_VAR_VAR,
+        VAR_CONST_CONST,
+        VAR_CONST_VAR,
+        VAR_VAR_CONST,
+        VAR_VAR_VAR
     }
 }
