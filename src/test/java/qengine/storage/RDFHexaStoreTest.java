@@ -1,13 +1,17 @@
 package qengine.storage;
 
+import fr.boreal.model.formula.api.FOFormula;
+import fr.boreal.model.formula.api.FOFormulaConjunction;
+import fr.boreal.model.kb.api.FactBase;
 import fr.boreal.model.logicalElements.api.*;
 import fr.boreal.model.logicalElements.factory.impl.SameObjectTermFactory;
 import fr.boreal.model.logicalElements.impl.SubstitutionImpl;
-import org.apache.commons.lang3.NotImplementedException;
-import org.junit.jupiter.api.Disabled;
+import fr.boreal.model.query.api.FOQuery;
+import fr.boreal.model.queryEvaluation.api.FOQueryEvaluator;
+import fr.boreal.query_evaluation.generic.GenericFOQueryEvaluator;
+import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
-import qengine.storage.RDFHexaStore;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -329,26 +333,45 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(sixthResult), "Missing substitution : " + sixthResult);
 
     }
+    private List<Substitution> executeStarQuery(StarQuery starQuery, FactBase factBase){
+        FOQuery<FOFormulaConjunction> foQuery = starQuery.asFOQuery(); // Conversion en FOQuery
+        FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance(); // Créer un évaluateur
+        Iterator<Substitution> queryResults = evaluator.evaluate(foQuery, factBase); // Évaluer la requête
+        List<Substitution> matchedResult = new ArrayList<Substitution>();
+        queryResults.forEachRemaining(matchedResult::add);
+        return matchedResult;
+    }
+
+
 
     @Test
     public void testMatchStarQuery() {
-        RDFHexaStore store = new RDFHexaStore();
-        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
-        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2));
-        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_3));
-        store.add(new RDFAtom(SUBJECT_1, PREDICATE_2, OBJECT_3));
-        store.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
-        store.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
 
-        testMatchStarQueryMultipleVars1(store);
-        testMatchStarQueryMultipleVars2(store);
-        testMatchStarQuery1(store);
-        testMatchStarQuery2(store);
-        testMatchStarQuery3(store);
-        testMatchStarQuery4(store);
+        RDFHexaStore store = new RDFHexaStore();
+        List<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
+        rdfAtoms.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_2));
+        rdfAtoms.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_3));
+        rdfAtoms.add(new RDFAtom(SUBJECT_1, PREDICATE_2, OBJECT_3));
+        rdfAtoms.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
+        rdfAtoms.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_2));
+        FactBase factBase = new SimpleInMemoryGraphStore();
+
+        // Stocker chaque RDFAtom dans le store
+        for (RDFAtom atom : rdfAtoms) {
+            factBase.add(atom);
+            store.add(atom);
+        }
+
+        testMatchStarQueryMultipleVars1(store, factBase);
+        testMatchStarQueryMultipleVars2(store, factBase);
+        testMatchStarQuery1(store, factBase);
+        testMatchStarQuery2(store, factBase);
+        testMatchStarQuery3(store, factBase);
+        testMatchStarQuery4(store, factBase);
 
     }
-    public void testMatchStarQueryMultipleVars1(RDFHexaStore store){
+    public void testMatchStarQueryMultipleVars1(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_3);
         ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
@@ -362,6 +385,8 @@ class RDFHexaStoreTest {
         Iterator<Substitution> matchedAtoms = store.match(q);
         List<Substitution> matchedList = new ArrayList<>();
         matchedAtoms.forEachRemaining(matchedList::add);
+
+        List<Substitution> resultIntegral = executeStarQuery(q, factBase);
 
         Substitution firstResult = new SubstitutionImpl();
         firstResult.add(VAR_X, SUBJECT_1);
@@ -378,8 +403,10 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
         assertTrue(matchedList.contains(secondResult), "Missing substitution: " + secondResult);
         assertTrue(matchedList.contains(thirdResult), "Missing substitution: " + thirdResult);
+        assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
     }
-    public void testMatchStarQueryMultipleVars2(RDFHexaStore store){
+
+    public void testMatchStarQueryMultipleVars2(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, VAR_Z, OBJECT_3);
         ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
@@ -395,6 +422,8 @@ class RDFHexaStoreTest {
         Iterator<Substitution> matchedAtoms = store.match(q);
         List<Substitution> matchedList = new ArrayList<>();
         matchedAtoms.forEachRemaining(matchedList::add);
+
+        List<Substitution> resultIntegral = executeStarQuery(q, factBase);
 
         Substitution one = new SubstitutionImpl();
         Substitution two = new SubstitutionImpl();
@@ -449,10 +478,11 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(six), "Missing substitution: " + six);
         assertTrue(matchedList.contains(seven), "Missing substitution: " + seven);
         assertTrue(matchedList.contains(eight), "Missing substitution: " + eight);
+        assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
 
     }
 
-    public void testMatchStarQuery1(RDFHexaStore store){
+    public void testMatchStarQuery1(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_3);
         ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
@@ -465,13 +495,16 @@ class RDFHexaStoreTest {
         List<Substitution> matchedList = new ArrayList<>();
         matchedAtoms.forEachRemaining(matchedList::add);
 
+        List<Substitution> resultIntegral = executeStarQuery(q, factBase);
+
         Substitution firstResult = new SubstitutionImpl();
         firstResult.add(VAR_X, SUBJECT_1);
         assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
+        assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
     }
 
-    public void testMatchStarQuery2(RDFHexaStore store){
+    public void testMatchStarQuery2(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_1);
         ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
@@ -484,12 +517,14 @@ class RDFHexaStoreTest {
         List<Substitution> matchedList = new ArrayList<>();
         matchedAtoms.forEachRemaining(matchedList::add);
 
+        List<Substitution> resultIntegral = executeStarQuery(q, factBase);
+
         Substitution firstResult = new SubstitutionImpl();
         assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
     }
 
-    public void testMatchStarQuery3(RDFHexaStore store){
+    public void testMatchStarQuery3(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_2);
 
@@ -503,12 +538,16 @@ class RDFHexaStoreTest {
         List<Substitution> matchedList = new ArrayList<>();
         matchedAtoms.forEachRemaining(matchedList::add);
 
+        List<Substitution> resultIntegral = executeStarQuery(q, factBase);
+
         Substitution firstResult = new SubstitutionImpl();
         firstResult.add(VAR_X, SUBJECT_1);
         assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
+        assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
+
     }
-    public void testMatchStarQuery4(RDFHexaStore store){
+    public void testMatchStarQuery4(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_2);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_3);
 
@@ -522,6 +561,8 @@ class RDFHexaStoreTest {
         List<Substitution> matchedList = new ArrayList<>();
         matchedAtoms.forEachRemaining(matchedList::add);
 
+        List<Substitution> resultIntegral = executeStarQuery(q, factBase);
+
         Substitution firstResult = new SubstitutionImpl();
         firstResult.add(VAR_X, SUBJECT_1);
         Substitution secondResult = new SubstitutionImpl();
@@ -529,7 +570,7 @@ class RDFHexaStoreTest {
         assertEquals(2, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
         assertTrue(matchedList.contains(secondResult), "Missing element: " + secondResult);
-
+        assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
     }
 
     // Vos autres tests d'HexaStore ici
