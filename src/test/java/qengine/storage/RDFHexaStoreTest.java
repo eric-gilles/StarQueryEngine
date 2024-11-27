@@ -647,7 +647,7 @@ class RDFHexaStoreTest {
         testSpeedComparaison2();
 
     }
-    private void testSpeedComparaison1() throws IOException {
+    private void testSpeedComparaison2() throws IOException {
         List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_BIG);
         List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE_ALL);
         FactBase factBase = new SimpleInMemoryGraphStore();
@@ -658,7 +658,7 @@ class RDFHexaStoreTest {
         }
         speedTest(starQueries, store, factBase);
     }
-    private void testSpeedComparaison2() throws IOException {
+    private void testSpeedComparaison1() throws IOException {
         List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_SMALL);
         List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE);
         FactBase factBase = new SimpleInMemoryGraphStore();
