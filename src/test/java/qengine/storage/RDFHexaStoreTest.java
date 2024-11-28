@@ -370,7 +370,7 @@ class RDFHexaStoreTest {
     }
 
     @Test
-    public void testMatchStarQuery() {
+    void testMatchStarQuery() {
 
         RDFHexaStore store = new RDFHexaStore();
         List<RDFAtom> rdfAtoms = new ArrayList<>();
@@ -396,6 +396,7 @@ class RDFHexaStoreTest {
         testMatchStarQuery4(store, factBase);
 
     }
+
     public void testMatchStarQueryMultipleVars1(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_3);
@@ -564,6 +565,7 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
 
     }
+
     public void testMatchStarQuery4(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_2);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_3);
@@ -640,13 +642,14 @@ class RDFHexaStoreTest {
     }
 
     @Test
-    public void speedTestIntegraalHexaStore() throws IOException {
+    void speedTestIntegraalHexaStore() throws IOException {
         System.out.println("----Comparaison n°1----");
         testSpeedComparaison1();
         System.out.println("----Comparaison n°2----");
         testSpeedComparaison2();
 
     }
+
     private void testSpeedComparaison2() throws IOException {
         List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_BIG);
         List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE_ALL);
@@ -658,6 +661,7 @@ class RDFHexaStoreTest {
         }
         speedTest(starQueries, store, factBase);
     }
+
     private void testSpeedComparaison1() throws IOException {
         List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_SMALL);
         List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE);
@@ -670,7 +674,6 @@ class RDFHexaStoreTest {
         speedTest(starQueries, store, factBase);
     }
 
-
     private void speedTest(List<StarQuery> queries, RDFHexaStore store, FactBase factBase) {
         long sumIntegral = 0;
         long sumHexastore = 0;
@@ -678,33 +681,27 @@ class RDFHexaStoreTest {
         for (StarQuery starQuery : queries) {
             System.out.println();
 
-            // Conversion en FOQuery
             FOQuery<FOFormulaConjunction> foQuery = starQuery.asFOQuery();
             FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance();
 
-            // Mesurer le temps d'Integraal
             long startTime1 = System.nanoTime();
             Iterator<Substitution> queryResults = evaluator.evaluate(foQuery, factBase);
             long endTime1 = System.nanoTime();
             long durationIntegraal = endTime1 - startTime1;
             System.out.println("Execution speed of Integraal: " + durationIntegraal + " nanosec");
 
-            // Collecter les résultats
             List<Substitution> matchedResultIntegraal = new ArrayList<>();
             queryResults.forEachRemaining(matchedResultIntegraal::add);
 
-            // Mesurer le temps de HexaStore
             long startTime2 = System.nanoTime();
             Iterator<Substitution> matchedSubstitutions = store.match(starQuery);
             long endTime2 = System.nanoTime();
             long durationHexastore = endTime2 - startTime2;
             System.out.println("Execution speed of our HexaStore: " + durationHexastore + " nanosec");
 
-            // Collecter les résultats
             List<Substitution> matchedResultHexaStore = new ArrayList<>();
             matchedSubstitutions.forEachRemaining(matchedResultHexaStore::add);
 
-            // Vérifier les résultats
             assertTrue(matchedResultHexaStore.containsAll(matchedResultIntegraal),
                     "Integraal doesn't have the same result: " + matchedResultIntegraal);
 
@@ -717,7 +714,4 @@ class RDFHexaStoreTest {
         System.out.println("Average execution time of Integraal: " + (double) sumIntegral / queries.size() + " nanosec");
         System.out.println("Average execution time of our HexaStore: " + (double) sumHexastore / queries.size() + " nanosec");
     }
-
-
-    // Vos autres tests d'HexaStore ici
 }
