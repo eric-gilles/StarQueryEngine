@@ -226,7 +226,6 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(secondResult), "Missing substitution : " + secondResult);
         assertTrue(matchedList.contains(thirdResult), "Missing substitution : " + thirdResult);
         assertTrue(matchedList.contains(fourthResult), "Missing substitution : " + fourthResult);
-
     }
 
     void testMatchAtom4(RDFHexaStore store) { // Test case 4 : Variable, Constante, Constante
@@ -344,8 +343,8 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(fourthResult), "Missing substitution: " + fourthResult);
         assertTrue(matchedList.contains(fifthResult), "Missing substitution : " + fifthResult);
         assertTrue(matchedList.contains(sixthResult), "Missing substitution : " + sixthResult);
-
     }
+
     private List<Substitution> executeStarQuery(StarQuery starQuery, FactBase factBase){
         FOQuery<FOFormulaConjunction> foQuery = starQuery.asFOQuery(); // Conversion en FOQuery
         FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance(); // Créer un évaluateur
@@ -394,7 +393,6 @@ class RDFHexaStoreTest {
         testMatchStarQuery2(store, factBase);
         testMatchStarQuery3(store, factBase);
         testMatchStarQuery4(store, factBase);
-
     }
 
     public void testMatchStarQueryMultipleVars1(RDFHexaStore store, FactBase factBase){
@@ -502,7 +500,6 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(seven), "Missing substitution: " + seven);
         assertTrue(matchedList.contains(eight), "Missing substitution: " + eight);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-
     }
 
     public void testMatchStarQuery1(RDFHexaStore store, FactBase factBase){
@@ -563,7 +560,6 @@ class RDFHexaStoreTest {
         assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-
     }
 
     public void testMatchStarQuery4(RDFHexaStore store, FactBase factBase){
@@ -650,9 +646,9 @@ class RDFHexaStoreTest {
 
     }
 
-    private void testSpeedComparaison2() throws IOException {
-        List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_BIG);
-        List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE_ALL);
+    private void testSpeedComparaison1() throws IOException {
+        List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_SMALL);
+        List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE);
         FactBase factBase = new SimpleInMemoryGraphStore();
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -662,9 +658,9 @@ class RDFHexaStoreTest {
         speedTest(starQueries, store, factBase);
     }
 
-    private void testSpeedComparaison1() throws IOException {
-        List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_SMALL);
-        List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE);
+    private void testSpeedComparaison2() throws IOException {
+        List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_BIG);
+        List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE_ALL);
         FactBase factBase = new SimpleInMemoryGraphStore();
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
