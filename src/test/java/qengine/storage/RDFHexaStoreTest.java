@@ -349,10 +349,7 @@ class RDFHexaStoreTest {
     private List<Substitution> executeStarQuery(StarQuery starQuery, FactBase factBase){
         FOQuery<FOFormulaConjunction> foQuery = starQuery.asFOQuery(); // Conversion en FOQuery
         FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance(); // Créer un évaluateur
-        long startTime = System.nanoTime();
         Iterator<Substitution> queryResults = evaluator.evaluate(foQuery, factBase); // Évaluer la requête
-        long endTime = System.nanoTime();
-        System.out.println("Execution speed of Integraal: "+(endTime - startTime)+" nanosec");
         List<Substitution> matchedResult = new ArrayList<>();
         queryResults.forEachRemaining(matchedResult::add);
         return matchedResult;
@@ -360,10 +357,7 @@ class RDFHexaStoreTest {
 
 
     private List<Substitution> executeStarQueryHexaStore(StarQuery starQuery, RDFHexaStore store){
-        long startTime = System.nanoTime();
         Iterator<Substitution> matchedSubstitutions =  store.match(starQuery);
-        long endTime = System.nanoTime();
-        System.out.println("Execution speed of our HexaStore: "+(endTime - startTime)+" nanosec");
         List<Substitution> matchedResult = new ArrayList<>();
         matchedSubstitutions.forEachRemaining(matchedResult::add);
         return matchedResult;
@@ -387,7 +381,6 @@ class RDFHexaStoreTest {
             factBase.add(atom);
             store.add(atom);
         }
-
         testMatchStarQueryMultipleVars1(store, factBase);
         testMatchStarQueryMultipleVars2(store, factBase);
         testMatchStarQuery1(store, factBase);
@@ -396,7 +389,45 @@ class RDFHexaStoreTest {
         testMatchStarQuery4(store, factBase);
 
     }
+    @Test
+    public void testMultipleValues(){
+        RDFHexaStore store = new RDFHexaStore();
+        FactBase factBase = new SimpleInMemoryGraphStore();
+
+        List<RDFAtom> rdfAtoms = new ArrayList<>();
+        rdfAtoms.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_1));
+        rdfAtoms.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_1));
+        rdfAtoms.add(new RDFAtom(SUBJECT_1, PREDICATE_1, OBJECT_3));
+        rdfAtoms.add(new RDFAtom(SUBJECT_2, PREDICATE_1, OBJECT_3));
+        for (RDFAtom rdfAtom: rdfAtoms){
+            factBase.add(rdfAtom);
+            store.add(rdfAtom);
+        }
+
+
+        RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
+        RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_3);
+
+
+        ArrayList<RDFAtom> selectedAtoms = new ArrayList<>();
+        selectedAtoms.add(secondMatchingAtom);
+        selectedAtoms.add(firstMatchingAtom);
+        ArrayList<Variable> vars = new ArrayList<>();
+        vars.add(VAR_X);
+        StarQuery q = new StarQuery("My star query", selectedAtoms, vars);
+        List<Substitution> res = executeStarQueryHexaStore(q, store);
+        List<Substitution> integraal = executeStarQuery(q, factBase);
+        Substitution firstRes = new SubstitutionImpl();
+        firstRes.add(VAR_X, SUBJECT_1);
+        Substitution secondRes = new SubstitutionImpl();
+        secondRes.add(VAR_X, SUBJECT_2);
+        assertEquals(2, res.size(), "There should be two matched RDFAtoms");
+        assertEquals(integraal.size(), res.size(), "Intregraal and Hexstore should send the same result");
+        assertTrue(res.containsAll(integraal), "Integraal doesn't have the same result:"+ integraal);
+        assertTrue(integraal.containsAll(res), "Integraal doesn't have the same result:"+ integraal);
+    }
     public void testMatchStarQueryMultipleVars1(RDFHexaStore store, FactBase factBase){
+
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
         RDFAtom secondMatchingAtom = new RDFAtom(VAR_X, PREDICATE_2, OBJECT_3);
         ArrayList<RDFAtom> rdfAtoms = new ArrayList<>();
@@ -423,12 +454,16 @@ class RDFHexaStoreTest {
         thirdResult.add(VAR_X, SUBJECT_1);
         thirdResult.add(VAR_Y, OBJECT_3);
 
+//        System.out.println(matchedList);
+//        System.out.println(resultIntegral);
+
         assertEquals(3, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
         assertTrue(matchedList.contains(secondResult), "Missing substitution: " + secondResult);
         assertTrue(matchedList.contains(thirdResult), "Missing substitution: " + thirdResult);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-    }
+        assertTrue(resultIntegral.containsAll(matchedList), "Integraal doesn't have the same result:"+ resultIntegral);    }
+
 
     public void testMatchStarQueryMultipleVars2(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, VAR_Y);
@@ -501,7 +536,7 @@ class RDFHexaStoreTest {
         assertTrue(matchedList.contains(seven), "Missing substitution: " + seven);
         assertTrue(matchedList.contains(eight), "Missing substitution: " + eight);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-
+        assertTrue(resultIntegral.containsAll(matchedList), "Integraal doesn't have the same result:"+ resultIntegral);
     }
 
     public void testMatchStarQuery1(RDFHexaStore store, FactBase factBase){
@@ -522,7 +557,7 @@ class RDFHexaStoreTest {
         assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing substitution: " + firstResult);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-    }
+        assertTrue(resultIntegral.containsAll(matchedList), "Integraal doesn't have the same result:"+ resultIntegral);    }
 
     public void testMatchStarQuery2(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_1);
@@ -536,11 +571,13 @@ class RDFHexaStoreTest {
         List<Substitution> matchedList  = executeStarQueryHexaStore(q, store);
 
         List<Substitution> resultIntegral = executeStarQuery(q, factBase);
+//        System.out.println(matchedList);
+//        System.out.println(resultIntegral);
 
-        Substitution firstResult = new SubstitutionImpl();
-        assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
-        assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
+        assertEquals(0, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
+        assertTrue(resultIntegral.containsAll(matchedList), "Integraal doesn't have the same result:"+ resultIntegral);
+
     }
 
     public void testMatchStarQuery3(RDFHexaStore store, FactBase factBase){
@@ -562,7 +599,7 @@ class RDFHexaStoreTest {
         assertEquals(1, matchedList.size(), "There should be one matched RDFAtoms");
         assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-
+        assertTrue(resultIntegral.containsAll(matchedList), "Integraal doesn't have the same result:"+ resultIntegral);
     }
     public void testMatchStarQuery4(RDFHexaStore store, FactBase factBase){
         RDFAtom firstMatchingAtom = new RDFAtom(VAR_X, PREDICATE_1, OBJECT_2);
@@ -583,10 +620,8 @@ class RDFHexaStoreTest {
         Substitution secondResult = new SubstitutionImpl();
         secondResult.add(VAR_X, SUBJECT_2);
         assertEquals(2, matchedList.size(), "There should be one matched RDFAtoms");
-        assertTrue(matchedList.contains(firstResult), "Missing element: " + firstResult);
-        assertTrue(matchedList.contains(secondResult), "Missing element: " + secondResult);
         assertTrue(matchedList.containsAll(resultIntegral), "Integraal doesn't have the same result:"+ resultIntegral);
-    }
+        assertTrue(resultIntegral.containsAll(matchedList), "Integraal doesn't have the same result:"+ resultIntegral);    }
 
     /**
      * Parse et affiche le contenu d'un fichier RDF.
@@ -599,13 +634,10 @@ class RDFHexaStoreTest {
         List<RDFAtom> rdfAtoms = new ArrayList<>();
 
         try (RDFAtomParser rdfAtomParser = new RDFAtomParser(rdfFile, RDFFormat.NTRIPLES)) {
-            int count = 0;
             while (rdfAtomParser.hasNext()) {
                 RDFAtom atom = rdfAtomParser.next();
                 rdfAtoms.add(atom);  // Stocker l'atome dans la collection
-                System.out.println("RDF Atom #" + (++count) + ": " + atom);
             }
-            System.out.println("Total RDF Atoms parsed: " + count);
         }
         return rdfAtoms;
     }
@@ -620,15 +652,11 @@ class RDFHexaStoreTest {
         List<StarQuery> starQueries = new ArrayList<>();
 
         try (StarQuerySparQLParser queryParser = new StarQuerySparQLParser(queryFilePath)) {
-            int queryCount = 0;
 
             while (queryParser.hasNext()) {
                 Query query = queryParser.next();
                 if (query instanceof StarQuery starQuery) {
                     starQueries.add(starQuery);  // Stocker la requête dans la collection
-                    System.out.println("Star Query #" + (++queryCount) + ":");
-                    System.out.println("  Central Variable: " + starQuery.getCentralVariable().label());
-                    System.out.println("  RDF Atoms:");
                     starQuery.getRdfAtoms().forEach(atom -> System.out.println("    " + atom));
                 } else {
                     System.err.println("Requête inconnue ignorée.");
@@ -638,16 +666,49 @@ class RDFHexaStoreTest {
         }
         return starQueries;
     }
-
     @Test
-    public void speedTestIntegraalHexaStore() throws IOException {
-        System.out.println("----Comparaison n°1----");
-        testSpeedComparaison1();
-        System.out.println("----Comparaison n°2----");
-        testSpeedComparaison2();
+    public void testCorrectionCompletude() throws IOException {
+        List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_SMALL);
+        List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE);
+        FactBase factBase = new SimpleInMemoryGraphStore();
+        RDFHexaStore store = new RDFHexaStore();
+        for (RDFAtom atom : rdfAtoms) {
+            store.add(atom);
+            factBase.add(atom);
+        }
+        evaluationOfQueries(starQueries, factBase, store);
+
+        rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_BIG);
+        starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE_ALL);
+        factBase = new SimpleInMemoryGraphStore();
+        store = new RDFHexaStore();
+        for (RDFAtom atom : rdfAtoms) {
+            store.add(atom);
+            factBase.add(atom);  // Stocker chaque RDFAtom dans le store
+        }
+        evaluationOfQueries(starQueries, factBase, store);
 
     }
-    private void testSpeedComparaison2() throws IOException {
+    public void evaluationOfQueries(List<StarQuery> queries, FactBase factBase, RDFHexaStore store){
+        for (StarQuery starQuery : queries) {
+            // Conversion en FOQuery
+            FOQuery<FOFormulaConjunction> foQuery = starQuery.asFOQuery();
+            FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance();
+            Iterator<Substitution> resIntegraal = evaluator.evaluate(foQuery, factBase);
+            Iterator<Substitution> resHexa = store.match(starQuery);
+            List<Substitution> listSubIntegraal = new ArrayList<>();
+            List<Substitution> listSubHexastore = new ArrayList<>();
+            resHexa.forEachRemaining(listSubHexastore::add);
+            resIntegraal.forEachRemaining(listSubIntegraal::add);
+            assertEquals(listSubIntegraal.size(), listSubHexastore.size(), "Not the same size");
+            assertTrue(listSubHexastore.containsAll(listSubIntegraal), "Missing substitutions: "+listSubHexastore+" : "+listSubIntegraal );
+            assertTrue(listSubIntegraal.containsAll(listSubHexastore), "Missing substitutions: "+listSubHexastore+" : "+listSubIntegraal );
+        }
+    }
+
+
+    @Test
+    public void testSpeedOnBigDataset() throws IOException {
         List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_BIG);
         List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE_ALL);
         FactBase factBase = new SimpleInMemoryGraphStore();
@@ -658,7 +719,8 @@ class RDFHexaStoreTest {
         }
         speedTest(starQueries, store, factBase);
     }
-    private void testSpeedComparaison1() throws IOException {
+    @Test
+    public void testSpeedOnSmallDataset() throws IOException {
         List<RDFAtom> rdfAtoms = parseRDFData(SAMPLE_DATA_FILE_SMALL);
         List<StarQuery> starQueries = parseSparQLQueries(SAMPLE_QUERY_FILE);
         FactBase factBase = new SimpleInMemoryGraphStore();
@@ -672,50 +734,29 @@ class RDFHexaStoreTest {
 
 
     private void speedTest(List<StarQuery> queries, RDFHexaStore store, FactBase factBase) {
-        long sumIntegral = 0;
-        long sumHexastore = 0;
+        long startTimeIntegraal = System.currentTimeMillis();
 
         for (StarQuery starQuery : queries) {
-            System.out.println();
-
             // Conversion en FOQuery
             FOQuery<FOFormulaConjunction> foQuery = starQuery.asFOQuery();
             FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance();
-
-            // Mesurer le temps d'Integraal
-            long startTime1 = System.nanoTime();
-            Iterator<Substitution> queryResults = evaluator.evaluate(foQuery, factBase);
-            long endTime1 = System.nanoTime();
-            long durationIntegraal = endTime1 - startTime1;
-            System.out.println("Execution speed of Integraal: " + durationIntegraal + " nanosec");
-
-            // Collecter les résultats
-            List<Substitution> matchedResultIntegraal = new ArrayList<>();
-            queryResults.forEachRemaining(matchedResultIntegraal::add);
-
-            // Mesurer le temps de HexaStore
-            long startTime2 = System.nanoTime();
-            Iterator<Substitution> matchedSubstitutions = store.match(starQuery);
-            long endTime2 = System.nanoTime();
-            long durationHexastore = endTime2 - startTime2;
-            System.out.println("Execution speed of our HexaStore: " + durationHexastore + " nanosec");
-
-            // Collecter les résultats
-            List<Substitution> matchedResultHexaStore = new ArrayList<>();
-            matchedSubstitutions.forEachRemaining(matchedResultHexaStore::add);
-
-            // Vérifier les résultats
-            assertTrue(matchedResultHexaStore.containsAll(matchedResultIntegraal),
-                    "Integraal doesn't have the same result: " + matchedResultIntegraal);
-
-            // Accumuler les durées
-            sumIntegral += durationIntegraal;
-            sumHexastore += durationHexastore;
+            evaluator.evaluate(foQuery, factBase);
         }
+        long endTimeIntegraal = System.currentTimeMillis();
+        long durationIntegraal = endTimeIntegraal - startTimeIntegraal;
+
+        long startTimeHexastore = System.currentTimeMillis();
+        for(StarQuery starQuery: queries){
+            // Mesurer le temps de HexaStore
+            store.match(starQuery);
+        }
+        long endTimeHexastore = System.currentTimeMillis();
+        long durationHexastore = endTimeHexastore - startTimeHexastore;
+
 
         // Calculer les moyennes
-        System.out.println("Average execution time of Integraal: " + (double) sumIntegral / queries.size() + " nanosec");
-        System.out.println("Average execution time of our HexaStore: " + (double) sumHexastore / queries.size() + " nanosec");
+        System.out.println("Average execution time of Integraal: " + (double) durationIntegraal / queries.size() + " ms");
+        System.out.println("Average execution time of our HexaStore: " + (double) durationHexastore / queries.size() + " ms");
     }
 
 

@@ -162,61 +162,42 @@ public class RDFHexaStore implements RDFStorage {
 
     @Override
     public Iterator<Substitution> match(StarQuery q) {
-        Collection<Variable> vars = q.getAnswerVariables();
         List<Substitution> substitutions = new ArrayList<>();
+
         for (RDFAtom atom : q.getRdfAtoms()) {
             Iterator<Substitution> matchedAtoms = this.match(atom);
+            if (!matchedAtoms.hasNext()) {
+                return Collections.emptyIterator();
+            }
+
             List<Substitution> matchedList = new ArrayList<>();
             matchedAtoms.forEachRemaining(matchedList::add);
-//            substitutions = merge(substitutions, matchedList);
             substitutions = mergeGeneral(substitutions, matchedList);
-
+            if(substitutions.isEmpty()) return Collections.emptyIterator();
         }
-        if (substitutions.isEmpty()) substitutions.add(new SubstitutionImpl());
         return substitutions.iterator();
     }
-    //Merge simple (selon 1 variable)
-   /* public List<Substitution> merge(List<Substitution> substitutions, List<Substitution> subFromAtom) {
-        ArrayList<Substitution> result = new ArrayList<>();
-        if (subFromAtom.isEmpty()) {
-            result.add(new SubstitutionImpl());
-            return result;
-        }
-        if (substitutions.isEmpty()){
-            return subFromAtom;
-        }
 
-        for (Substitution sub : subFromAtom) {
-            if (substitutions.contains(sub)) {
-                result.add(sub);
-            }
-        }
-        if (result.isEmpty()) {
-            result.add(new SubstitutionImpl());
-            return result;
-        }
-        return result;
-    }*/
     //merge complexe (selon plusieurs variables)
     public List<Substitution> mergeGeneral(
             List<Substitution> substitutions,
-            List<Substitution> subFromAtom) {
+            List<Substitution> subFromAtom
+    ) {
         ArrayList<Substitution> res = new ArrayList<>();
-
         // Cas trivial :
         if (substitutions.isEmpty()) return subFromAtom;
-
         // Parcourir toutes les combinaisons
         for (Substitution subA : subFromAtom) {
             for (Substitution subB : substitutions) {
+
                 Map<Variable, Term> mapSubA = subA.toMap();
                 Map<Variable, Term> mapSubB = subB.toMap();
                 Map<Variable, Term> mergedMap = new HashMap<>(mapSubA); //Map qui stock les variables pour la fusion
 
                 boolean isCompatible = true;
-
                 // Vérifier la compatibilité avec les variables communes
                 for (Map.Entry<Variable, Term> entry : mapSubB.entrySet()) {
+
                     Variable var = entry.getKey();
                     Term value = entry.getValue();
 
@@ -242,6 +223,7 @@ public class RDFHexaStore implements RDFStorage {
                 }
             }
         }
+
         return res;
     }
 
