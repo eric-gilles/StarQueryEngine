@@ -1,12 +1,3 @@
-#mapping v0 wsdbm:Retailer uniform
-SELECT ?v1 ?v2 ?v3 ?v4 ?v5 ?v6 ?v7 ?v8 ?v9 WHERE {
-	%v0%	sorg:contactPoint	?v1 .
-	?v1	wsdbm:friendOf	?v2 .
-	?v2	wsdbm:likes	?v3 .
-	?v3	rev:hasReview	?v4 .
-	?v4 rev:reviewer ?v5 .
-	?v5	wsdbm:makesPurchase	?v6 .
-	?v6	wsdbm:purchaseFor	?v7 .
-	?v7	rev:hasReview	?v8 .
-	?v8	rev:title	?v9 .
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:5af9d70874814dae356da77f133a08a318900fc2ee7724e10f7eb1896aa9f0f8
+size 332

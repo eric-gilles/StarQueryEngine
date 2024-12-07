@@ -1,8 +1,3 @@
-#mapping v2 wsdbm:Country uniform
-SELECT ?v0 ?v1 ?v3 WHERE {
-	?v0	dc:Location	?v1 .
-	?v0	sorg:nationality	%v2% .
-	?v0	wsdbm:gender	?v3 .
-	?v0	rdf:type	wsdbm:Role2 .
-}
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:cdf342f6aed93f54e9443e399e20e4c39530cbdbf8ed0bc2d5fbc59e9d0f128f
+size 176

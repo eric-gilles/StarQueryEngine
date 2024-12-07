@@ -1,8 +1,3 @@
-#mapping v1 wsdbm:ProductCategory uniform
-SELECT ?v0 ?v2 ?v3 WHERE {
-	?v0	rdf:type	%v1% .
-	?v0	sorg:description	?v2 .
-	?v0	sorg:keywords	?v3 .
-	?v0	sorg:language	wsdbm:Language0 .
-}
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:1950945f1e607230d9ce0122872eabfce3a37d4049ade91acbaa34cbdd1b36ef
+size 191
