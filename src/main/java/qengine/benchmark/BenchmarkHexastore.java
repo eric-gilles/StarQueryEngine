@@ -132,7 +132,7 @@ public class BenchmarkHexastore {
                         .filter(result -> result.getKey().startsWith("integraal"))
                         .mapToLong(Map.Entry::getValue)
                         .sum();
-                writer.append("Category: ").append(entry.getKey()).append("\t(Time:").append(String.valueOf(categoryTimeIntegraal)).append(" ms)\n");
+                writer.append("Category: ").append(entry.getKey()).append("\t(Time: ").append(String.valueOf(categoryTimeIntegraal)).append(" ms)\n");
                 for (Map.Entry<String, Long> result : entry.getValue().entrySet()) {
                     if (result.getKey().startsWith("integraal") && result.getValue() != null) {
                         String fileName = result.getKey().substring("integraal_".length());
