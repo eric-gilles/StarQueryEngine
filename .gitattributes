@@ -1,3 +1,2 @@
 *.nt filter=lfs diff=lfs merge=lfs -text
 *.rdf filter=lfs diff=lfs merge=lfs -text
-*.txt filter=lfs diff=lfs merge=lfs -text

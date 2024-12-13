@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:94264375b0baa9ce0e115196f1c1b10ae6103381ef37309d568447868d263696
-size 155
+#mapping v0 wsdbm:City uniform
+SELECT ?v1 ?v2 WHERE {
+	%v0%	gn:parentCountry	?v1 .
+	?v2	wsdbm:likes	wsdbm:Product0 .
+	?v2	sorg:nationality	?v1 .
+}
+

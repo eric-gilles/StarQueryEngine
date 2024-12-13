@@ -1,3 +1,9 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0479a5e4109616827bedaa83b448e161bc12b59d47f5c117e9de67be450ff1ca
-size 173
+SELECT ?v0 WHERE {
+	?v0	wsdbm:likes	?v1 .
+	?v0	wsdbm:friendOf	?v2 .
+	?v0	dc:Location	?v3 .
+	?v0	foaf:age	?v4 .
+	?v0	wsdbm:gender	?v5 .
+	?v0	foaf:givenName	?v6 .
+}
+

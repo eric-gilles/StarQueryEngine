@@ -1,3 +1,11 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:12a7ab03602f8fea95bb475a5102a4a056467d66b37a6a15ea9fe9a46a0dbcd4
-size 294
+#mapping v0 wsdbm:User uniform
+SELECT ?v1 ?v2 ?v3 ?v4 ?v5 ?v6 ?v7 ?v8 WHERE {
+	%v0%	wsdbm:likes	?v1 .
+	?v1	rev:hasReview	?v2 .
+	?v2	rev:reviewer	?v3 .
+	?v3	wsdbm:makesPurchase	?v4 .
+	?v4 wsdbm:purchaseFor ?v5 .
+	?v5	mo:artist	?v6 .
+	?v6	wsdbm:friendOf	?v7 .
+	?v7	foaf:homepage	?v8 .
+}

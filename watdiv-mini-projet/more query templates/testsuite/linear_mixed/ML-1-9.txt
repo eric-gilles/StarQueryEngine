@@ -1,3 +1,12 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:64cf71af563daa00c6400a2d8971d777faf48c42570fe36c41d48f10e21ea13c
-size 326
+#mapping v0 wsdbm:User uniform
+SELECT ?v1 ?v2 ?v3 ?v4 ?v5 ?v6 ?v7 ?v8 ?v9 WHERE {
+	%v0%	wsdbm:follows	?v1 .
+	?v1	wsdbm:makesPurchase	?v2 .
+	?v2	wsdbm:purchaseFor	?v3 .
+	?v3	rev:hasReview	?v4 .
+	?v4 rev:reviewer ?v5 .
+	?v5	wsdbm:likes	?v6 .
+	?v6	sorg:actor	?v7 .
+	?v7	wsdbm:friendOf	?v8 .
+	?v8	sorg:telephone	?v9 .
+}

@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c6b9a0aca99cc6d3d7312a4fa66d78d4d21bce43bac89363ddcff7ac0c114830
-size 181
+#mapping v1 wsdbm:AgeGroup uniform
+SELECT ?v0 ?v2 ?v3 WHERE {
+	?v0	foaf:age	%v1% .
+	?v0	foaf:familyName	?v2 .
+	?v3	mo:artist	?v0 .
+	?v0	sorg:nationality	wsdbm:Country1 .
+}
+

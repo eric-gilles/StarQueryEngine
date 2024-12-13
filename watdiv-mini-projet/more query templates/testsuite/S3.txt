@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e77a253a7fad331f245f6d289f3425b90428297d1588c002453bc6df1fea49e8
-size 181
+#mapping v1 wsdbm:ProductCategory uniform
+SELECT ?v0 ?v2 ?v3 ?v4 WHERE {
+	?v0	rdf:type	%v1% .
+	?v0	sorg:caption	?v2 .
+	?v0	wsdbm:hasGenre	?v3 .
+	?v0	sorg:publisher	?v4 .
+}
+
