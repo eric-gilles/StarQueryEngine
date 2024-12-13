@@ -48,8 +48,8 @@ public class Utils {
 
 
             // Calculer les moyennes
-            System.out.println("Average execution time of Integraal: " + (double) durationIntegraal / queries.size() + " ms");
-            System.out.println("Average execution time of our HexaStore: " + (double) durationHexastore / queries.size() + " ms");
+            System.out.println("Execution time of Integraal: " + (double) durationIntegraal + " ms");
+            System.out.println("Execution time of our HexaStore: " + (double) durationHexastore + " ms");
         }
 
         /**
