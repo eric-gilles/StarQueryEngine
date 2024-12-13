@@ -9,17 +9,17 @@ import fr.boreal.model.query.api.FOQuery;
 import fr.boreal.model.query.api.Query;
 import fr.boreal.model.queryEvaluation.api.FOQueryEvaluator;
 import fr.boreal.query_evaluation.generic.GenericFOQueryEvaluator;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 import qengine.parser.RDFAtomParser;
 import qengine.parser.StarQuerySparQLParser;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -113,5 +113,55 @@ public class Utils {
             assertTrue(listSubIntegraal.containsAll(listSubHexastore), "Missing substitutions: "+listSubHexastore+" : "+listSubIntegraal );
         }
     }
+
+    static HashMap<String,List<StarQuery>> getQueriesFromDir(String dirname) throws IOException {
+        HashMap<String,List<StarQuery>> hashMap = new HashMap<>();
+        File queriesDir = new File(dirname);
+        File[] queryFiles = queriesDir.listFiles((dir, name) -> name.endsWith(".queryset"));
+
+        if (queryFiles != null) {
+            for (File queryFile : queryFiles) {
+                // Charger les requêtes à partir du fichier actuel
+                List<StarQuery> starQueries = parseSparQLQueries(queryFile.getPath());
+                if (starQueries.isEmpty()) continue;
+                hashMap.put(queryFile.getName(), starQueries);
+            }
+        }
+        return hashMap;
+    }
+
+    static HashMap<String,List<RDFAtom>> getRDFFromDir(String dirname) throws IOException {
+        HashMap<String,List<RDFAtom>> hashMap = new HashMap<>();
+        File rdfFir = new File(dirname);
+        File[] rdfFiles = rdfFir.listFiles((dir, name) -> name.endsWith(".nt"));
+
+        if (rdfFiles != null) {
+            for (File rdfFile : rdfFiles) {
+                // Charger les requêtes à partir du fichier actuel
+                List<RDFAtom> rdfAtoms = parseRDFData(rdfFile.getPath());
+                if (rdfAtoms.isEmpty()) continue;
+                hashMap.put(rdfFile.getName(), rdfAtoms);
+            }
+        }
+        return hashMap;
+    }
+    static int evaluateDups(List<StarQuery> queries){
+        int count = 0;
+        List<StarQuery> alreadyDone = new ArrayList<>();
+        for (int i = 0; i < queries.size(); i++) {
+            if(alreadyDone.contains(queries.get(i))) continue;
+            for (int j = i + 1; j < queries.size(); j++) {
+                if (queries.get(i).equals(queries.get(j))) count++;
+            }
+            alreadyDone.add(queries.get(i));
+        }
+        return count;
+    }
+
+    // Méthode pour supprimer les doublons dans la liste de requêtes
+    static Set<StarQuery> removeDups(List<StarQuery> queries) {
+        return new HashSet<>(queries);
+    }
+
 
 }

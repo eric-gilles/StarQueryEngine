@@ -3,11 +3,13 @@ package qengine.storage;
 import fr.boreal.model.formula.api.FOFormula;
 import fr.boreal.model.formula.api.FOFormulaConjunction;
 import fr.boreal.model.kb.api.FactBase;
+import fr.boreal.model.logicalElements.api.Atom;
 import fr.boreal.model.logicalElements.api.Substitution;
 import fr.boreal.model.query.api.FOQuery;
 import fr.boreal.model.queryEvaluation.api.FOQueryEvaluator;
 import fr.boreal.query_evaluation.generic.GenericFOQueryEvaluator;
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
+import jdk.jshell.execution.Util;
 import org.junit.jupiter.api.Test;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
@@ -15,6 +17,10 @@ import qengine.model.StarQuery;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RDFHexaStoreBenchmarkTest {
     @Test
@@ -100,123 +106,84 @@ class RDFHexaStoreBenchmarkTest {
     }
     @Test
     void preprocessing() throws IOException {
-        FactBase factBase = new SimpleInMemoryGraphStore();
-        RDFHexaStore store = new RDFHexaStore();
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/100K.nt");
-        for (RDFAtom atom : rdfAtoms) {
-            store.add(atom);
-            factBase.add(atom);
-        }
-        benchmarkData(factBase, store);
 
-        factBase = new SimpleInMemoryGraphStore();
-        store = new RDFHexaStore();
-        rdfAtoms = Utils.parseRDFData("data/500K.nt");
-        for (RDFAtom atom : rdfAtoms) {
-            store.add(atom);
-            factBase.add(atom);
-        }
-        benchmarkData(factBase, store);
-
-        factBase = new SimpleInMemoryGraphStore();
-        store = new RDFHexaStore();
-        rdfAtoms = Utils.parseRDFData("data/2M.nt");
-        for (RDFAtom atom : rdfAtoms) {
-            store.add(atom);
-            factBase.add(atom);
-        }
-        benchmarkData(factBase, store);
+        HashMap<String, List<StarQuery>> datasetQueries = Utils.getQueriesFromDir("data/queries");
+        HashMap<String, List<RDFAtom>> datasetRdf = Utils.getRDFFromDir("data/rdf");
 
 
+        for (Map.Entry<String, List<StarQuery>> entryQuery: datasetQueries.entrySet()){
+            String queryName = entryQuery.getKey();
+            List<StarQuery> queries = entryQuery.getValue();
 
-    }
+            System.out.println(queryName+": ");
+            System.out.println("\tDoublons: "+ Utils.evaluateDups(queries)+"/"+queries.size());
+            System.out.println("\tPourcentage: "+ (double) Utils.evaluateDups(queries)/queries.size());
 
-    void benchmarkData(FactBase factBase, RDFHexaStore store) throws IOException {
 
-        // Traitement de tous les fichiers dans le répertoire "data/queries"
-        File queriesDir = new File("data/queries");
-        File[] queryFiles = queriesDir.listFiles((dir, name) -> name.endsWith(".queryset"));
+            queries = Utils.removeDups(queries).stream().toList();
+            assertEquals(0,Utils.evaluateDups(queries), "Failed to remove dups" );
+            for (Map.Entry<String, List<RDFAtom>> entryRdf: datasetRdf.entrySet()){
+                List<RDFAtom> rdfAtoms = entryRdf.getValue();
+                String rdfAtomName = entryRdf.getKey();
+                FactBase factBase = new SimpleInMemoryGraphStore();
+                RDFHexaStore store = new RDFHexaStore();
+                rdfAtoms.stream().map(factBase::add);
+                store.addAll(rdfAtoms);
 
-        if (queryFiles != null) {
-            for (File queryFile : queryFiles) {
-                System.out.println("Processing file: " + queryFile.getName());
+                int nbNonMatchingQueries = evaluatePercentilNonMatching(queries, store, factBase);
+                System.out.println("\t\t"+rdfAtomName+":");
 
-                // Charger les requêtes à partir du fichier actuel
-                List<StarQuery> starQueries = Utils.parseSparQLQueries(queryFile.getPath());
+                System.out.println("\t\t\tNombre de requêtes vides: "+nbNonMatchingQueries+"/"+queries.size());
+                System.out.println("\t\t\tPourcentage de requêtes vides: "+(double) nbNonMatchingQueries/queries.size());
+                int nbQueriesRemoved = (int) (nbNonMatchingQueries * 0.05);
+                int intialQueriesSize = queries.size();
+                queries = removeNonMatching(queries, factBase, store);
 
-                // Évaluer les doublons et les requêtes qui ne correspondent à aucun résultat
-                evaluatePercentilDupsAndNonMatching(starQueries, store, factBase);
-
-                // Suppression des doublons et des requêtes qui ne correspondent à rien
-                removeDups(starQueries);
-                removeNonMatching(starQueries, factBase, store);
-
+                assertEquals(queries.size(), intialQueriesSize - nbNonMatchingQueries + nbQueriesRemoved, "Failed to remove non maching queries");
             }
-        } else {
-            System.out.println("No query files found in the specified directory.");
         }
+
+
+
     }
+
+
+
 
 
 
     // Méthode pour évaluer les doublons et les requêtes sans correspondance
-    void evaluatePercentilDupsAndNonMatching(List<StarQuery> queries, RDFHexaStore store, FactBase factBase) {
-        Set<StarQuery> queriesSet = new HashSet<>(queries);
+    int evaluatePercentilNonMatching(List<StarQuery> queries, RDFHexaStore store, FactBase factBase) {
         int nonMatchingQueries = 0;
-        // Vérifier les requêtes qui ne correspondent à aucun résultat
 
         for (StarQuery query : queries) {
-            FOQuery<FOFormulaConjunction> foQuery = query.asFOQuery(); // Conversion en FOQuery
-            FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance();
-            Iterator<Substitution> subs = evaluator.evaluate(foQuery, factBase); // Évaluer la requête
+            Iterator<Substitution> subs = store.match(query);
             List<Substitution> subsList = new ArrayList<>();
             subs.forEachRemaining(subsList::add);
             if (subsList.isEmpty()) {
                 nonMatchingQueries++;
             }
         }
-
-
-        queriesSet.addAll(queries);
-
-        // Calculer et afficher les pourcentages
-        double dupPercentage =  (1- (queriesSet.size() / (double) queries.size())) * 100;
-        double nonMatchingPercentage = (nonMatchingQueries/ (double) queries.size()) * 100;
-
-        System.out.println("Dups: " + dupPercentage + "%");
-        System.out.println("Non Matching Queries: " + nonMatchingPercentage + "%");
+        return nonMatchingQueries;
     }
 
-    // Méthode pour supprimer les doublons dans la liste de requêtes
-    void removeDups(List<StarQuery> queries) {
-        for (int i = 0; i < queries.size(); i++) {
-            for (int j = i + 1; j < queries.size(); j++) {
-                if (queries.get(i).equals(queries.get(j))) {
-                    queries.remove(j);
-                    j--; // Recalcule l'index après la suppression
-                }
-            }
-        }
-    }
 
     // Méthode pour supprimer les requêtes sans correspondance avec les données
-    void removeNonMatching(List<StarQuery> queries, FactBase factBase, RDFHexaStore store) {
+    List<StarQuery> removeNonMatching(List<StarQuery> queries, FactBase factBase, RDFHexaStore store) {
         // Liste pour stocker les requêtes non correspondantes
         List<StarQuery> nonMatchingQueries = new ArrayList<>();
+        List<StarQuery> mergedQueries = new ArrayList<>();
 
-        // Identifier les requêtes non correspondantes
-        Iterator<StarQuery> iterator = queries.iterator();
-        while (iterator.hasNext()) {
-            StarQuery query = iterator.next();
-            Iterator<Substitution> subs = store.match(query);
-            List<Substitution> subsList = new ArrayList<>();
-            subs.forEachRemaining(subsList::add);
-            if (subsList.isEmpty()) {
-                nonMatchingQueries.add(query); // Ajouter à la liste des non-matching
-                iterator.remove(); // Retirer la requête de la liste principale
+        for (StarQuery query: queries){
+            Iterator<Substitution> result = store.match(query);
+            List<Substitution> listSub = new ArrayList<>();
+            result.forEachRemaining(listSub::add);
+            if (listSub.isEmpty()){
+                nonMatchingQueries.add(query);
+            } else {
+                mergedQueries.add(query);
             }
         }
-
         // Conserver 5 % des requêtes non correspondantes
         int numToKeep = (int) (nonMatchingQueries.size() * 0.05); // 5 % des requêtes non correspondantes à garder
 
@@ -225,12 +192,10 @@ class RDFHexaStoreBenchmarkTest {
         for (int i = 0; i < numToKeep; i++) {
             int randomIndex = random.nextInt(nonMatchingQueries.size());
             StarQuery queryToKeep = nonMatchingQueries.get(randomIndex);
-            queries.add(queryToKeep); // Réajouter la requête non correspondante dans la liste des requêtes
-            nonMatchingQueries.remove(randomIndex); // Supprimer de la liste des nonMatchingQueries
+            mergedQueries.add(queryToKeep);
+            nonMatchingQueries.remove(queryToKeep);
         }
-
-        // Optionnel : afficher combien de requêtes ont été conservées
-        System.out.println("Conservé 5% des requêtes non correspondantes. Nombre conservé : " + numToKeep);
+        return mergedQueries;
     }
 
 }
