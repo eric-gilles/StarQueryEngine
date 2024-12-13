@@ -1,32 +1,25 @@
 package qengine.storage;
 
-import fr.boreal.model.formula.api.FOFormula;
-import fr.boreal.model.formula.api.FOFormulaConjunction;
 import fr.boreal.model.kb.api.FactBase;
-import fr.boreal.model.logicalElements.api.Atom;
 import fr.boreal.model.logicalElements.api.Substitution;
-import fr.boreal.model.query.api.FOQuery;
-import fr.boreal.model.queryEvaluation.api.FOQueryEvaluator;
-import fr.boreal.query_evaluation.generic.GenericFOQueryEvaluator;
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
-import jdk.jshell.execution.Util;
 import org.junit.jupiter.api.Test;
+import qengine.benchmark.Utils;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static qengine.benchmark.Utils.*;
 
 class RDFHexaStoreBenchmarkTest {
+
     @Test
     void testCorrectionCompletude100k() throws IOException {
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/100K.nt");
-        List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData(DATA_100K);
+        List<StarQuery> starQueries = Utils.parseSparQLQueries(QUERIES_EXAMPLE);
         FactBase factBase = new SimpleInMemoryGraphStore();
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -35,10 +28,11 @@ class RDFHexaStoreBenchmarkTest {
         }
         Utils.evaluationOfQueries(starQueries, factBase, store);
     }
+
     @Test
     void testCorrectionCompletude500k() throws IOException {
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/500K.nt");
-        List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData(DATA_500K);
+        List<StarQuery> starQueries = Utils.parseSparQLQueries(QUERIES_EXAMPLE);
         FactBase factBase = new SimpleInMemoryGraphStore();
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -47,10 +41,11 @@ class RDFHexaStoreBenchmarkTest {
         }
         Utils.evaluationOfQueries(starQueries, factBase, store);
     }
+
     @Test
     void testCorrectionCompletude2M() throws IOException {
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/2M.nt");
-        List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData(DATA_2M);
+        List<StarQuery> starQueries = Utils.parseSparQLQueries(QUERIES_EXAMPLE);
         FactBase factBase = new SimpleInMemoryGraphStore();
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -63,8 +58,8 @@ class RDFHexaStoreBenchmarkTest {
     @Test
     void testBenchmark100K() throws IOException {
         FactBase factBase = new SimpleInMemoryGraphStore();
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/100K.nt");
-        List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData(DATA_100K);
+        List<StarQuery> starQueries = Utils.parseSparQLQueries(QUERIES_EXAMPLE);
 
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -78,8 +73,8 @@ class RDFHexaStoreBenchmarkTest {
     @Test
     void testBenchmark500K() throws IOException {
         FactBase factBase = new SimpleInMemoryGraphStore();
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/500K.nt");
-        List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData(DATA_500K);
+        List<StarQuery> starQueries = Utils.parseSparQLQueries(QUERIES_EXAMPLE);
 
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -93,8 +88,8 @@ class RDFHexaStoreBenchmarkTest {
     @Test
     void testBenchmark2M() throws IOException {
         FactBase factBase = new SimpleInMemoryGraphStore();
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/2M.nt");
-        List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData(DATA_2M);
+        List<StarQuery> starQueries = Utils.parseSparQLQueries(QUERIES_EXAMPLE);
 
         RDFHexaStore store = new RDFHexaStore();
         for (RDFAtom atom : rdfAtoms) {
@@ -104,9 +99,9 @@ class RDFHexaStoreBenchmarkTest {
         Utils.evaluationOfQueries(starQueries, factBase, store);
         Utils.speedTest(starQueries, store, factBase);
     }
-    @Test
-    void preprocessing() throws IOException {
 
+    @Test
+    void testPreprocessing() throws IOException {
         HashMap<String, List<StarQuery>> datasetQueries = Utils.getQueriesFromDir("data/queries");
         HashMap<String, List<RDFAtom>> datasetRdf = Utils.getRDFFromDir("data/rdf");
 
@@ -116,12 +111,12 @@ class RDFHexaStoreBenchmarkTest {
             List<StarQuery> queries = entryQuery.getValue();
 
             System.out.println(queryName+": ");
-            System.out.println("\tDoublons: "+ Utils.evaluateDups(queries)+"/"+queries.size());
-            System.out.println("\tPourcentage: "+ (double) Utils.evaluateDups(queries)/queries.size());
+            System.out.println("\tDoublons: "+ Utils.evaluateDuplicateQueries(queries)+"/"+queries.size());
+            System.out.println("\tPourcentage: "+ (double) Utils.evaluateDuplicateQueries(queries)/queries.size());
 
 
-            queries = Utils.removeDups(queries).stream().toList();
-            assertEquals(0,Utils.evaluateDups(queries), "Failed to remove dups" );
+            queries = Utils.removeDuplicateQueries(queries).stream().toList();
+            assertEquals(0,Utils.evaluateDuplicateQueries(queries), "Failed to remove dups" );
             for (Map.Entry<String, List<RDFAtom>> entryRdf: datasetRdf.entrySet()){
                 List<RDFAtom> rdfAtoms = entryRdf.getValue();
                 String rdfAtomName = entryRdf.getKey();
@@ -130,30 +125,23 @@ class RDFHexaStoreBenchmarkTest {
                 rdfAtoms.stream().map(factBase::add);
                 store.addAll(rdfAtoms);
 
-                int nbNonMatchingQueries = evaluatePercentilNonMatching(queries, store, factBase);
+                int nbNonMatchingQueries = evaluatePercentilNonMatching(queries, store);
                 System.out.println("\t\t"+rdfAtomName+":");
 
                 System.out.println("\t\t\tNombre de requêtes vides: "+nbNonMatchingQueries+"/"+queries.size());
                 System.out.println("\t\t\tPourcentage de requêtes vides: "+(double) nbNonMatchingQueries/queries.size());
                 int nbQueriesRemoved = (int) (nbNonMatchingQueries * 0.05);
                 int intialQueriesSize = queries.size();
-                queries = removeNonMatching(queries, factBase, store);
+                queries = removeNonMatching(queries, store);
 
-                assertEquals(queries.size(), intialQueriesSize - nbNonMatchingQueries + nbQueriesRemoved, "Failed to remove non maching queries");
+                assertEquals(queries.size(), intialQueriesSize - nbNonMatchingQueries + nbQueriesRemoved,
+                        "Failed to remove non maching queries");
             }
         }
-
-
-
     }
 
-
-
-
-
-
     // Méthode pour évaluer les doublons et les requêtes sans correspondance
-    int evaluatePercentilNonMatching(List<StarQuery> queries, RDFHexaStore store, FactBase factBase) {
+    int evaluatePercentilNonMatching(List<StarQuery> queries, RDFHexaStore store) {
         int nonMatchingQueries = 0;
 
         for (StarQuery query : queries) {
@@ -167,9 +155,8 @@ class RDFHexaStoreBenchmarkTest {
         return nonMatchingQueries;
     }
 
-
     // Méthode pour supprimer les requêtes sans correspondance avec les données
-    List<StarQuery> removeNonMatching(List<StarQuery> queries, FactBase factBase, RDFHexaStore store) {
+    List<StarQuery> removeNonMatching(List<StarQuery> queries, RDFHexaStore store) {
         // Liste pour stocker les requêtes non correspondantes
         List<StarQuery> nonMatchingQueries = new ArrayList<>();
         List<StarQuery> mergedQueries = new ArrayList<>();
