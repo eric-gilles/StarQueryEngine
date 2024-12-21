@@ -132,7 +132,7 @@ public class Utils {
         }
     }
 
-    public static HashMap<String,List<StarQuery>> getQueriesFromDir(String queriesDir) throws IOException {
+    public static HashMap<String, List<StarQuery>> getQueriesFromDir(String queriesDir) throws IOException {
         HashMap<String,List<StarQuery>> hashMap = new HashMap<>();
         File[] queryFiles = getFilesFromDir(queriesDir);
 
@@ -145,7 +145,7 @@ public class Utils {
         return hashMap;
     }
 
-    public static HashMap<String,List<RDFAtom>> getRDFFromDir(String dirname) throws IOException {
+    public static HashMap<String, List<RDFAtom>> getRDFFromDir(String dirname) throws IOException {
         HashMap<String,List<RDFAtom>> hashMap = new HashMap<>();
         File rdfFir = new File(dirname);
         File[] rdfFiles = rdfFir.listFiles((dir, name) -> name.endsWith(".nt"));

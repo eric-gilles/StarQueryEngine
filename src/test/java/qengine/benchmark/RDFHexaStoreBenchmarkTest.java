@@ -1,12 +1,12 @@
-package qengine.storage;
+package qengine.benchmark;
 
 import fr.boreal.model.kb.api.FactBase;
 import fr.boreal.model.logicalElements.api.Substitution;
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
 import org.junit.jupiter.api.Test;
-import qengine.benchmark.Utils;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
+import qengine.storage.RDFHexaStore;
 
 import java.io.IOException;
 import java.util.*;
@@ -85,6 +85,7 @@ class RDFHexaStoreBenchmarkTest {
         Utils.speedTest(starQueries, store, factBase);
 
     }
+    
     @Test
     void testBenchmark2M() throws IOException {
         FactBase factBase = new SimpleInMemoryGraphStore();

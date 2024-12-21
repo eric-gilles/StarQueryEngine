@@ -30,21 +30,22 @@ public class BenchmarkHexastore {
         // Default Query Directory to use for benchmarking modify it to change the query directory
         String queryDir = QUERIES_DIR_100;
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Benchmarking RDFHexaStore");
-        System.out.println("Choose the RDF Data Set to use between : ");
-        System.out.println("1. 100K");
-        System.out.println("2. 500K");
-        System.out.println("3. 2M");
-        System.out.println("Enter the RDF Data Set to use : ");
-        String choice = scanner.nextLine();
-        switch (choice) {
-            case "1" -> handlebenchmark(DATA_100K, queryDir);
-            case "2" -> handlebenchmark(DATA_500K, queryDir);
-            case "3" -> handlebenchmark(DATA_2M, queryDir);
-            default -> {
-                System.out.println("Invalid choice");
-                exit(1);
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Benchmarking RDFHexaStore");
+            System.out.println("Choose the RDF Data Set to use between : ");
+            System.out.println("1. 100K");
+            System.out.println("2. 500K");
+            System.out.println("3. 2M");
+            System.out.println("Enter the RDF Data Set to use : ");
+            String choice = scanner.nextLine();
+            switch (choice) {
+                case "1" -> handlebenchmark(DATA_100K, queryDir);
+                case "2" -> handlebenchmark(DATA_500K, queryDir);
+                case "3" -> handlebenchmark(DATA_2M, queryDir);
+                default -> {
+                    System.out.println("Invalid choice");
+                    exit(1);
+                }
             }
         }
     }
@@ -63,8 +64,8 @@ public class BenchmarkHexastore {
 
         Map<String, Map<String, Long>> results = benchmark(store, factBase, queryDir);
 
-        String benchmark_result_file = saveBenchmarkResultsToFile(results, dataset);
-        System.out.println("\n\n## Benchmarking Complete and Results saved in the file : " + benchmark_result_file + " ##");
+        String benchmarkResultFile = saveBenchmarkResultsToFile(results, dataset);
+        System.out.println("\n\n## Benchmarking Complete and Results saved in the file : " + benchmarkResultFile + " ##");
     }
 
     private static Map<String, Map<String, Long>> benchmark(RDFHexaStore store, FactBase factBase,
@@ -94,14 +95,14 @@ public class BenchmarkHexastore {
         LocalDateTime date = LocalDateTime.now();
         String formattedDate = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss"));
         String formattedDataSetName = dataset.split("/")[2];
-        String benchmark_result_file = "data/benchmarks/benchmark_results_" + formattedDataSetName + "_" + formattedDate + ".txt";
+        String benchmarkResultFile = "data/benchmarks/benchmark_results_" + formattedDataSetName + "_" + formattedDate + ".txt";
 
         File file = new File("data/benchmarks");
         if (!file.exists()) {
             file.mkdirs();
         }
 
-        try(FileWriter writer = new FileWriter(benchmark_result_file)) {
+        try(FileWriter writer = new FileWriter(benchmarkResultFile)) {
             writer.append("### Benchmark Results ###\n");
             writer.append(getComputerInfo()).append("\n\n");
 
@@ -148,7 +149,7 @@ public class BenchmarkHexastore {
             System.err.println("Error while saving benchmark results to file : " + exception.getMessage());
         }
 
-        return benchmark_result_file;
+        return benchmarkResultFile;
     }
 
 

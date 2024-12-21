@@ -326,13 +326,12 @@ public class RDFHexaStore implements RDFStorage {
                 // Vérifier la compatibilité avec les variables communes
                 for (Map.Entry<Variable, Term> entry : mapSubB.entrySet()) {
 
-                    Variable var = entry.getKey();
                     Variable key = entry.getKey();
                     Term value = entry.getValue();
 
-                    if (mapSubA.containsKey(var)) {
+                    if (mapSubA.containsKey(key)) {
                         // Si la variable est commune, vérifier la compatibilité
-                        if (!mapSubA.get(var).equals(value)) {
+                        if (!mapSubA.get(key).equals(value)) {
                             isCompatible = false; // Conflit détecté
                             break;
                         }
