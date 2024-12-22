@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c0fa8311ee3d7e76cf7e45d739db392cb7fb39d71c42f649c278fbae7227e8d2
-size 118
+#mapping v2 wsdbm:Website uniform
+SELECT ?v0 ?v1 WHERE {
+	?v0	wsdbm:likes	?v1 .
+	?v0	wsdbm:subscribes	%v2% .
+}
+

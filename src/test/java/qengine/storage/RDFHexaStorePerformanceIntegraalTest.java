@@ -31,8 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class RDFHexaStorePerformanceIntegraalTest {
     private static final String WORKING_DIR = "data/";
-    private static final String SAMPLE_DATA_FILE_SMALL = WORKING_DIR + "sample_data.nt";
-    private static final String SAMPLE_DATA_FILE_BIG = WORKING_DIR + "100K.nt";
+    private static final String SAMPLE_DATA_FILE_SMALL = WORKING_DIR + "datasets/sample_data.nt";
+    private static final String SAMPLE_DATA_FILE_BIG = WORKING_DIR + "datasets/100K.nt";
 
     private static final String SAMPLE_QUERY_FILE = WORKING_DIR + "sample_query.queryset";
     private static final String SAMPLE_QUERY_FILE_ALL = WORKING_DIR + "STAR_ALL_workload.queryset";

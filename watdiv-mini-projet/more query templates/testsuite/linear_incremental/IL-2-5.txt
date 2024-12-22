@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:07974506ae6f2794bf3cc14be2887e1a7031c9bf90f50f04ef26984bb0a35a66
-size 200
+#mapping v0 wsdbm:Retailer uniform
+SELECT ?v1 ?v2 ?v3 ?v4 ?v5 WHERE {
+	%v0%	gr:offers	?v1 .
+	?v1	gr:includes	?v2 .
+	?v2	sorg:director	?v3 .
+	?v3	wsdbm:friendOf	?v4 .
+	?v4 wsdbm:friendOf ?v5 .
+}

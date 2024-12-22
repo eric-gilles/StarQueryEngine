@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:b84a5ec22d26edbf3c3223818170af9b9403c8b66ad2c3681566c2b5030bbe7a
-size 143
+#mapping v3 wsdbm:SubGenre uniform
+SELECT ?v0 ?v1 ?v2 WHERE {
+	?v0	mo:conductor	?v1 .
+	?v0	rdf:type	?v2 .
+	?v0	wsdbm:hasGenre	%v3% .
+}
+
