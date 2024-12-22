@@ -198,13 +198,15 @@ public class Utils {
     }
 
     // Méthode pour supprimer les requêtes sans correspondance avec les données
-    public static List<StarQuery> removeNonMatching(List<StarQuery> queries, RDFHexaStore store) {
+    public static List<StarQuery> removeNonMatching(List<StarQuery> queries, FactBase factBase) {
         // Liste pour stocker les requêtes non correspondantes
         List<StarQuery> nonMatchingQueries = new ArrayList<>();
         List<StarQuery> mergedQueries = new ArrayList<>();
 
         for (StarQuery query: queries){
-            Iterator<Substitution> result = store.match(query);
+            FOQuery<FOFormulaConjunction> foQuery = query.asFOQuery();
+            FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance();
+            Iterator<Substitution> result = evaluator.evaluate(foQuery, factBase);
             List<Substitution> listSub = new ArrayList<>();
             result.forEachRemaining(listSub::add);
             if (listSub.isEmpty()){

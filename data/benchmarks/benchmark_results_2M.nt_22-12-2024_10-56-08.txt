@@ -1,0 +1,73 @@
+### Benchmark Results (avec prepocessing)###
+
+### System Information ###
+Operating System: Microsoft Windows 11 build 26100
+CPU: AMD Ryzen 5 7600X 6-Core Processor             
+ 1 physical CPU package(s)
+ 6 physical CPU core(s)
+ 12 logical CPU(s)
+Identifier: AuthenticAMD Family 25 Model 97 Stepping 2
+ProcessorID: 178BFBFF00A60F12
+Microarchitecture: Zen 3
+Total Memory: 31 GB
+Available Memory: 16 GB
+Java Version: 23.0.1
+Java Vendor: Oracle Corporation
+Java VM: OpenJDK 64-Bit Server VM
+
+
+### HexaStore Results ###
+
+Category: Q1	(Time: 3728 ms)
+Q_1_likes_100.queryset: 125 ms
+Q_1_includes_100.queryset: 123 ms
+Q_1_nationality_100.queryset: 293 ms
+Q_1_eligibleregion_100.queryset: 2395 ms
+Q_1_subscribes_100.queryset: 792 ms
+
+
+Category: Q2	(Time: 37913 ms)
+Q_2_tag_homepage_100.queryset: 5173 ms
+Q_2_likes_nationality_100.queryset: 25461 ms
+Q_2_includes_eligibleRegion_100.queryset: 5602 ms
+Q_2_subscribes_likes_100.queryset: 1677 ms
+
+
+Category: Q3	(Time: 601340 ms)
+Q_3_location_nationality_gender_100.queryset: 136193 ms
+Q_3_nationality_gender_type_100.queryset: 233625 ms
+Q_3_location_gender_type_100.queryset: 231522 ms
+
+
+Category: Q4	(Time: 138339 ms)
+Q_4_location_nationality_gender_type_100.queryset: 138339 ms
+
+
+# HexaStore Total Time: 781320 ms
+
+
+### Integraal Results ###
+
+Category: Q1	(Time: 5 ms)
+Q_1_eligibleregion_100.queryset: 1 ms
+Q_1_subscribes_100.queryset: 1 ms
+Q_1_likes_100.queryset: 1 ms
+Q_1_includes_100.queryset: 1 ms
+Q_1_nationality_100.queryset: 1 ms
+
+Category: Q2	(Time: 4 ms)
+Q_2_includes_eligibleRegion_100.queryset: 1 ms
+Q_2_likes_nationality_100.queryset: 1 ms
+Q_2_tag_homepage_100.queryset: 1 ms
+Q_2_subscribes_likes_100.queryset: 1 ms
+
+Category: Q3	(Time: 3 ms)
+Q_3_location_nationality_gender_100.queryset: 1 ms
+Q_3_location_gender_type_100.queryset: 1 ms
+Q_3_nationality_gender_type_100.queryset: 1 ms
+
+Category: Q4	(Time: 1 ms)
+Q_4_location_nationality_gender_type_100.queryset: 1 ms
+
+# Integraal Total Time: 13 ms
+

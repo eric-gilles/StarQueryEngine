@@ -5,7 +5,6 @@ import fr.boreal.model.kb.api.FactBase;
 import fr.boreal.model.logicalElements.api.Substitution;
 
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
-import jdk.jshell.execution.Util;
 import org.junit.jupiter.api.Test;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
@@ -135,7 +134,7 @@ class RDFHexaStoreBenchmarkTest {
                 System.out.println("\t\t\tPourcentage de requêtes vides: "+(double) nbNonMatchingQueries/queries.size());
                 int nbQueriesRemoved = (int) (nbNonMatchingQueries * 0.05);
                 int intialQueriesSize = queries.size();
-                queries = removeNonMatching(queries, store);
+                queries = removeNonMatching(queries, factBase);
 
                 assertEquals(queries.size(), intialQueriesSize - nbNonMatchingQueries + nbQueriesRemoved,
                         "Failed to remove non maching queries");
@@ -185,7 +184,7 @@ class RDFHexaStoreBenchmarkTest {
                 RDFHexaStore store = new RDFHexaStore();
                 rdfAtoms.stream().map(factBase::add);
                 store.addAll(rdfAtoms);
-                queries = removeNonMatching(queries, store);
+                queries = removeNonMatching(queries, factBase);
                 System.out.println("------------------------");
                 System.out.println("Dataset: "+rdfAtomName);
                 System.out.println("Query: "+ queryName+", size: "+ queries.size());
