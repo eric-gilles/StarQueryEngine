@@ -1,7 +1,9 @@
 package qengine.benchmark;
 
+
 import fr.boreal.model.kb.api.FactBase;
 import fr.boreal.model.logicalElements.api.Substitution;
+
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
 import org.junit.jupiter.api.Test;
 import qengine.model.RDFAtom;
@@ -85,7 +87,7 @@ class RDFHexaStoreBenchmarkTest {
         Utils.speedTest(starQueries, store, factBase);
 
     }
-    
+
     @Test
     void testBenchmark2M() throws IOException {
         FactBase factBase = new SimpleInMemoryGraphStore();
@@ -100,7 +102,6 @@ class RDFHexaStoreBenchmarkTest {
         Utils.evaluationOfQueries(starQueries, factBase, store);
         Utils.speedTest(starQueries, store, factBase);
     }
-
     @Test
     void testPreprocessing() throws IOException {
         HashMap<String, List<StarQuery>> datasetQueries = Utils.getQueriesFromDir("data/queries");
@@ -133,7 +134,7 @@ class RDFHexaStoreBenchmarkTest {
                 System.out.println("\t\t\tPourcentage de requêtes vides: "+(double) nbNonMatchingQueries/queries.size());
                 int nbQueriesRemoved = (int) (nbNonMatchingQueries * 0.05);
                 int intialQueriesSize = queries.size();
-                queries = removeNonMatching(queries, store);
+                queries = removeNonMatching(queries, factBase);
 
                 assertEquals(queries.size(), intialQueriesSize - nbNonMatchingQueries + nbQueriesRemoved,
                         "Failed to remove non maching queries");
@@ -156,34 +157,41 @@ class RDFHexaStoreBenchmarkTest {
         return nonMatchingQueries;
     }
 
-    // Méthode pour supprimer les requêtes sans correspondance avec les données
-    List<StarQuery> removeNonMatching(List<StarQuery> queries, RDFHexaStore store) {
-        // Liste pour stocker les requêtes non correspondantes
-        List<StarQuery> nonMatchingQueries = new ArrayList<>();
-        List<StarQuery> mergedQueries = new ArrayList<>();
 
-        for (StarQuery query: queries){
-            Iterator<Substitution> result = store.match(query);
-            List<Substitution> listSub = new ArrayList<>();
-            result.forEachRemaining(listSub::add);
-            if (listSub.isEmpty()){
-                nonMatchingQueries.add(query);
-            } else {
-                mergedQueries.add(query);
+
+
+    @Test
+    void benchmark() throws IOException {
+        HashMap<String, List<StarQuery>> datasetQueries = Utils.getQueriesFromDir(QUERIES_DIR);
+        HashMap<String, List<RDFAtom>> datasetRdf = Utils.getRDFFromDir(DATA_DIR);
+
+        for (Map.Entry<String, List<StarQuery>> entryQuery: datasetQueries.entrySet()) {
+            List<StarQuery> queries = entryQuery.getValue();
+            queries = Utils.removeDuplicateQueries(queries).stream().toList();
+            entryQuery.setValue(queries);
+
+        }
+
+        for (Map.Entry<String, List<StarQuery>> entryQuery: datasetQueries.entrySet()){
+            String queryName = entryQuery.getKey();
+            List<StarQuery> queries = entryQuery.getValue();
+
+            queries = Utils.removeDuplicateQueries(queries).stream().toList();
+            for (Map.Entry<String, List<RDFAtom>> entryRdf: datasetRdf.entrySet()){
+                List<RDFAtom> rdfAtoms = entryRdf.getValue();
+                String rdfAtomName = entryRdf.getKey();
+                FactBase factBase = new SimpleInMemoryGraphStore();
+                RDFHexaStore store = new RDFHexaStore();
+                rdfAtoms.stream().map(factBase::add);
+                store.addAll(rdfAtoms);
+                queries = removeNonMatching(queries, factBase);
+                System.out.println("------------------------");
+                System.out.println("Dataset: "+rdfAtomName);
+                System.out.println("Query: "+ queryName+", size: "+ queries.size());
+                Utils.speedTest(queries, store, factBase);
+
             }
         }
-        // Conserver 5 % des requêtes non correspondantes
-        int numToKeep = (int) (nonMatchingQueries.size() * 0.05); // 5 % des requêtes non correspondantes à garder
-
-        // Mélanger les requêtes non correspondantes pour choisir de manière aléatoire
-        Random random = new Random();
-        for (int i = 0; i < numToKeep; i++) {
-            int randomIndex = random.nextInt(nonMatchingQueries.size());
-            StarQuery queryToKeep = nonMatchingQueries.get(randomIndex);
-            mergedQueries.add(queryToKeep);
-            nonMatchingQueries.remove(queryToKeep);
-        }
-        return mergedQueries;
     }
 
 }

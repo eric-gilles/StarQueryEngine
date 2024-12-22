@@ -1,7 +1,10 @@
 package qengine.benchmark;
 
+import com.jayway.jsonpath.spi.cache.Cache;
 import fr.boreal.model.kb.api.FactBase;
+import fr.boreal.model.logicalElements.api.Atom;
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
+import jdk.jshell.execution.Util;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -14,12 +17,11 @@ import qengine.storage.RDFHexaStore;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.CacheRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.System.exit;
 import static qengine.benchmark.Utils.*;
@@ -39,9 +41,9 @@ public class BenchmarkHexastore {
             System.out.println("Enter the RDF Data Set to use : ");
             String choice = scanner.nextLine();
             switch (choice) {
-                case "1" -> handlebenchmark(DATA_100K, queryDir);
-                case "2" -> handlebenchmark(DATA_500K, queryDir);
-                case "3" -> handlebenchmark(DATA_2M, queryDir);
+                case "1" -> handlebenchmark(DATA_100K, queryDir, true);
+                case "2" -> handlebenchmark(DATA_500K, queryDir, true);
+                case "3" -> handlebenchmark(DATA_2M, queryDir, true);
                 default -> {
                     System.out.println("Invalid choice");
                     exit(1);
@@ -49,8 +51,12 @@ public class BenchmarkHexastore {
             }
         }
     }
+    private static void resetCacheAndResources() {
+        // Exemple : Réinitialisation des caches ou suppression de fichiers temporaires
+        System.gc(); // Suggestion de nettoyage mémoire
+    }
 
-    private static void handlebenchmark(String dataset, String queryDir) throws IOException {
+    private static void handlebenchmark(String dataset, String queryDir, Boolean prepocessing) throws IOException {
         System.out.println("## Benchmarking RDFHexaStore with " + dataset + " dataset ##\n\n");
 
         List<RDFAtom> rdfAtoms = Utils.parseRDFData(dataset);
@@ -58,26 +64,42 @@ public class BenchmarkHexastore {
         RDFHexaStore store = new RDFHexaStore(); // Benchmarking RDFHexaStore
         FactBase factBase = new SimpleInMemoryGraphStore(); // Benchmarking Integraal
         store.addAll(rdfAtoms);
+        factBase.addAll(new HashSet<>(rdfAtoms));
         for (RDFAtom atom : rdfAtoms) {
             factBase.add(atom);
         }
 
-        Map<String, Map<String, Long>> results = benchmark(store, factBase, queryDir);
+        Map<String, Map<String, Long>> results = benchmark(store, factBase, queryDir, prepocessing);
 
         String benchmarkResultFile = saveBenchmarkResultsToFile(results, dataset);
         System.out.println("\n\n## Benchmarking Complete and Results saved in the file : " + benchmarkResultFile + " ##");
     }
 
-    private static Map<String, Map<String, Long>> benchmark(RDFHexaStore store, FactBase factBase,
-                                                            String queriesDir) throws IOException {
-        File[] queryFiles = getFilesFromDir(queriesDir);
+    private static Map<String, Map<String, Long>> benchmark(
+            RDFHexaStore store,
+            FactBase factBase,
+            String queriesDir,
+            Boolean preprocessing
+    ) throws IOException {
+        Map<String, List<StarQuery>> queryFiles = Utils.getQueriesFromDir(queriesDir);
+        if (preprocessing) {
+            for (Map.Entry<String, List<StarQuery>> entryQuery: queryFiles.entrySet()) {
+                List<StarQuery> queries = entryQuery.getValue();
+                queries = Utils.removeDuplicateQueries(queries).stream().toList();
+                entryQuery.setValue(queries);
+            }
+        }
+
 
         Map<String, Map<String, Long>> results = new HashMap<>();
-        for (File queryFile : queryFiles) {
-            String nameFile = queryFile.getName();
+        for (Map.Entry<String, List<StarQuery>> entryQuery: queryFiles.entrySet()) {
+            List<StarQuery> starQueries = entryQuery.getValue();
+            String nameFile = entryQuery.getKey();
+
+            if(preprocessing) Utils.removeNonMatching(starQueries, factBase);
+
             System.out.println("Processing file: " + nameFile);
             String category = nameFile.split("_")[0] + nameFile.split("_")[1];
-            List<StarQuery> starQueries = parseSparQLQueries(queryFile.getAbsolutePath());
 
             Map<String, Long> durations = speedTest(starQueries, store, factBase);
 
@@ -86,6 +108,7 @@ public class BenchmarkHexastore {
 
             results.get(category).put("hexastore_" + nameFile, durations.get("Hexastore"));
             results.get(category).put("integraal_" + nameFile, durations.get("Integraal"));
+
         }
         return results;
     }
@@ -153,7 +176,7 @@ public class BenchmarkHexastore {
     }
 
 
-    private static String getComputerInfo() {
+    public static String getComputerInfo() {
         StringBuilder infos = new StringBuilder();
         SystemInfo systemInfo = new SystemInfo();
         HardwareAbstractionLayer hardware = systemInfo.getHardware();

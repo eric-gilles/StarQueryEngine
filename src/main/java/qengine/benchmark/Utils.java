@@ -50,6 +50,7 @@ public class Utils {
         }
         long endTimeIntegraal = System.currentTimeMillis();
         long durationIntegraal = endTimeIntegraal - startTimeIntegraal;
+        if (durationIntegraal == 0) durationIntegraal = 1;
         durations.put("Integraal", durationIntegraal);
 
         // Mesurer le temps d'exécution de notre HexaStore
@@ -59,6 +60,8 @@ public class Utils {
         }
         long endTimeHexastore = System.currentTimeMillis();
         long durationHexastore = endTimeHexastore - startTimeHexastore;
+        if (durationHexastore == 0) durationHexastore = 1;
+
         durations.put("Hexastore", durationHexastore);
 
         // Calculer les moyennes
@@ -192,5 +195,37 @@ public class Utils {
             return new File[0];
         }
         return queryFiles;
+    }
+
+    // Méthode pour supprimer les requêtes sans correspondance avec les données
+    public static List<StarQuery> removeNonMatching(List<StarQuery> queries, FactBase factBase) {
+        // Liste pour stocker les requêtes non correspondantes
+        List<StarQuery> nonMatchingQueries = new ArrayList<>();
+        List<StarQuery> mergedQueries = new ArrayList<>();
+
+        for (StarQuery query: queries){
+            FOQuery<FOFormulaConjunction> foQuery = query.asFOQuery();
+            FOQueryEvaluator<FOFormula> evaluator = GenericFOQueryEvaluator.defaultInstance();
+            Iterator<Substitution> result = evaluator.evaluate(foQuery, factBase);
+            List<Substitution> listSub = new ArrayList<>();
+            result.forEachRemaining(listSub::add);
+            if (listSub.isEmpty()){
+                nonMatchingQueries.add(query);
+            } else {
+                mergedQueries.add(query);
+            }
+        }
+        // Conserver 5 % des requêtes non correspondantes
+        int numToKeep = (int) (nonMatchingQueries.size() * 0.05); // 5 % des requêtes non correspondantes à garder
+
+        // Mélanger les requêtes non correspondantes pour choisir de manière aléatoire
+        Random random = new Random();
+        for (int i = 0; i < numToKeep; i++) {
+            int randomIndex = random.nextInt(nonMatchingQueries.size());
+            StarQuery queryToKeep = nonMatchingQueries.get(randomIndex);
+            mergedQueries.add(queryToKeep);
+            nonMatchingQueries.remove(queryToKeep);
+        }
+        return mergedQueries;
     }
 }
