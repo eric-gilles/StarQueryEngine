@@ -1,26 +1,17 @@
 package qengine.storage;
 
-import fr.boreal.model.formula.api.FOFormula;
-import fr.boreal.model.formula.api.FOFormulaConjunction;
 import fr.boreal.model.kb.api.FactBase;
-import fr.boreal.model.logicalElements.api.Atom;
 import fr.boreal.model.logicalElements.api.Substitution;
-import fr.boreal.model.query.api.FOQuery;
-import fr.boreal.model.queryEvaluation.api.FOQueryEvaluator;
-import fr.boreal.query_evaluation.generic.GenericFOQueryEvaluator;
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
-import jdk.jshell.execution.Util;
 import org.junit.jupiter.api.Test;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Stream;
+
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RDFHexaStoreBenchmarkTest {
     @Test
@@ -63,7 +54,7 @@ class RDFHexaStoreBenchmarkTest {
     @Test
     void testBenchmark100K() throws IOException {
         FactBase factBase = new SimpleInMemoryGraphStore();
-        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/100K.nt");
+        List<RDFAtom> rdfAtoms = Utils.parseRDFData("data/rdf/100K.nt");
         List<StarQuery> starQueries = Utils.parseSparQLQueries("data/queries/Q_4_location_nationality_gender_type.queryset");
 
         RDFHexaStore store = new RDFHexaStore();
@@ -103,6 +94,39 @@ class RDFHexaStoreBenchmarkTest {
         }
         Utils.evaluationOfQueries(starQueries, factBase, store);
         Utils.speedTest(starQueries, store, factBase);
+    }
+    @Test
+    void benchmark() throws IOException {
+        HashMap<String, List<StarQuery>> datasetQueries = Utils.getQueriesFromDir("data/queries");
+        HashMap<String, List<RDFAtom>> datasetRdf = Utils.getRDFFromDir("data/rdf");
+        int count = 1;
+        for (Map.Entry<String, List<StarQuery>> entryQuery: datasetQueries.entrySet()) {
+            List<StarQuery> queries = entryQuery.getValue();
+            queries = Utils.removeDups(queries).stream().toList();
+            entryQuery.setValue(queries);
+        }
+        for (Map.Entry<String, List<StarQuery>> entryQuery: datasetQueries.entrySet()) {
+            List<StarQuery> queries = entryQuery.getValue();
+            String querysetName = entryQuery.getKey();
+            for (Map.Entry<String, List<RDFAtom>> entryRdf: datasetRdf.entrySet()) {
+                FactBase factBase = new SimpleInMemoryGraphStore();
+                RDFHexaStore store = new RDFHexaStore();
+                List<RDFAtom> rdfAtoms = entryRdf.getValue();
+                String rdfName = entryRdf.getKey();
+                rdfAtoms.stream().map(factBase::add);
+                store.addAll(rdfAtoms);
+                queries = removeNonMatching(queries, factBase, store);
+                System.out.println("-------------------");
+
+                System.out.println("Test#"+count);
+                System.out.println("Dataset: "+ rdfName+", taille: "+ rdfAtoms.size());
+                System.out.println("Queryset: "+ querysetName+ ", nb requête: "+ queries.size());
+
+                Utils.speedTest(queries, store, factBase);
+                count++;
+            }
+        }
+
     }
     @Test
     void preprocessing() throws IOException {
