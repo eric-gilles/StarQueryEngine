@@ -9,6 +9,11 @@ import fr.boreal.model.query.api.FOQuery;
 import fr.boreal.model.query.api.Query;
 import fr.boreal.model.queryEvaluation.api.FOQueryEvaluator;
 import fr.boreal.query_evaluation.generic.GenericFOQueryEvaluator;
+import oshi.SystemInfo;
+import oshi.hardware.CentralProcessor;
+import oshi.hardware.GlobalMemory;
+import oshi.hardware.HardwareAbstractionLayer;
+import oshi.software.os.OperatingSystem;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
@@ -163,6 +168,7 @@ public class Utils {
         }
         return hashMap;
     }
+
     public static int evaluateDuplicateQueries(List<StarQuery> queries){
         int count = 0;
         List<StarQuery> alreadyDone = new ArrayList<>();
@@ -227,5 +233,36 @@ public class Utils {
             nonMatchingQueries.remove(queryToKeep);
         }
         return mergedQueries;
+    }
+
+    /**
+     * Get the computer information
+     * @return String containing the computer information
+     */
+    public static String getComputerInfo() {
+        StringBuilder infos = new StringBuilder();
+        SystemInfo systemInfo = new SystemInfo();
+        HardwareAbstractionLayer hardware = systemInfo.getHardware();
+        OperatingSystem os = systemInfo.getOperatingSystem();
+
+        // Operating System Information
+        infos.append("\n### System Information ###\n");
+        infos.append("Operating System: ").append(os).append("\n");
+
+        // CPU Information
+        CentralProcessor processor = hardware.getProcessor();
+        infos.append("CPU: ").append(processor).append("\n");
+
+        // Memory Information
+        GlobalMemory memory = hardware.getMemory();
+        infos.append("Total Memory: ").append(memory.getTotal() / (1024 * 1024 * 1024)).append(" GB\n");
+        infos.append("Available Memory: ").append(memory.getAvailable() / (1024 * 1024 * 1024)).append(" GB\n");
+
+        // Java Information
+        infos.append("Java Version: ").append(System.getProperty("java.version")).append("\n");
+        infos.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\n");
+        infos.append("Java VM: ").append(System.getProperty("java.vm.name")).append("\n");
+
+        return infos.toString();
     }
 }

@@ -1,15 +1,7 @@
 package qengine.benchmark;
 
-import com.jayway.jsonpath.spi.cache.Cache;
 import fr.boreal.model.kb.api.FactBase;
-import fr.boreal.model.logicalElements.api.Atom;
 import fr.boreal.storage.natives.SimpleInMemoryGraphStore;
-import jdk.jshell.execution.Util;
-import oshi.SystemInfo;
-import oshi.hardware.CentralProcessor;
-import oshi.hardware.GlobalMemory;
-import oshi.hardware.HardwareAbstractionLayer;
-import oshi.software.os.OperatingSystem;
 import qengine.model.RDFAtom;
 import qengine.model.StarQuery;
 import qengine.storage.RDFHexaStore;
@@ -17,12 +9,9 @@ import qengine.storage.RDFHexaStore;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.CacheRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
-
 import static java.lang.System.exit;
 import static qengine.benchmark.Utils.*;
 
@@ -76,9 +65,6 @@ public class BenchmarkHexastore {
         FactBase factBase = new SimpleInMemoryGraphStore(); // Benchmarking Integraal
         store.addAll(rdfAtoms);
         factBase.addAll(new HashSet<>(rdfAtoms));
-        for (RDFAtom atom : rdfAtoms) {
-            factBase.add(atom);
-        }
 
         Map<String, Map<String, Long>> results = benchmark(store, factBase, queryDir, preprocessing);
 
@@ -193,36 +179,5 @@ public class BenchmarkHexastore {
         }
 
         return benchmarkResultFile;
-    }
-
-    /**
-     * Get the computer information
-     * @return String containing the computer information
-     */
-    public static String getComputerInfo() {
-        StringBuilder infos = new StringBuilder();
-        SystemInfo systemInfo = new SystemInfo();
-        HardwareAbstractionLayer hardware = systemInfo.getHardware();
-        OperatingSystem os = systemInfo.getOperatingSystem();
-
-        // Operating System Information
-        infos.append("\n### System Information ###\n");
-        infos.append("Operating System: ").append(os).append("\n");
-
-        // CPU Information
-        CentralProcessor processor = hardware.getProcessor();
-        infos.append("CPU: ").append(processor).append("\n");
-
-        // Memory Information
-        GlobalMemory memory = hardware.getMemory();
-        infos.append("Total Memory: ").append(memory.getTotal() / (1024 * 1024 * 1024)).append(" GB\n");
-        infos.append("Available Memory: ").append(memory.getAvailable() / (1024 * 1024 * 1024)).append(" GB\n");
-
-        // Java Information
-        infos.append("Java Version: ").append(System.getProperty("java.version")).append("\n");
-        infos.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\n");
-        infos.append("Java VM: ").append(System.getProperty("java.vm.name")).append("\n");
-
-        return infos.toString();
     }
 }
