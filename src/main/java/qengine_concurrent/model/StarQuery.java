@@ -23,7 +23,7 @@ public class StarQuery implements Query {
     private final String label;
 
     // Collection des triplets RDF (les atomes de la requête)
-    private final List<qengine.model.RDFAtom> rdfAtoms;
+    private final List<RDFAtom> rdfAtoms;
 
     // variables réponses
     private final Collection<Variable> answerVariables;
@@ -40,7 +40,7 @@ public class StarQuery implements Query {
      * @throws NullPointerException     si l'un des paramètres est null
      * @throws IllegalArgumentException si les atomes RDF ne forment pas une requête en étoile
      */
-    public StarQuery(String label, List<qengine.model.RDFAtom> rdfAtoms, Collection<Variable> answerVariables) {
+    public StarQuery(String label, List<RDFAtom> rdfAtoms, Collection<Variable> answerVariables) {
         this.label = Objects.requireNonNull(label, "Le label ne peut pas être null.");
         this.rdfAtoms = Objects.requireNonNull(rdfAtoms, "Les triplets RDF ne peuvent pas être null.");
         this.answerVariables = Objects.requireNonNull(answerVariables, "Les variables réponses ne peuvent pas être null.");
@@ -59,7 +59,7 @@ public class StarQuery implements Query {
      * @return la variable centrale
      * @throws IllegalArgumentException si les triplets ne partagent pas une variable commune
      */
-    private Variable determineCentralVariable(Collection<qengine.model.RDFAtom> rdfAtoms) {
+    private Variable determineCentralVariable(Collection<RDFAtom> rdfAtoms) {
         Set<Variable> sharedVariables = rdfAtoms.stream()
                 .flatMap(atom -> Arrays.stream(atom.getTerms()))
                 .filter(term -> term instanceof Variable)
@@ -84,7 +84,7 @@ public class StarQuery implements Query {
      * @param rdfAtoms        la collection de triplets RDF
      * @throws IllegalArgumentException si une variable de réponse n'est pas présente
      */
-    private void validateAnswerVariables(Collection<Variable> answerVariables, Collection<qengine.model.RDFAtom> rdfAtoms) {
+    private void validateAnswerVariables(Collection<Variable> answerVariables, Collection<RDFAtom> rdfAtoms) {
         Set<Term> allTerms = rdfAtoms.stream()
                 .flatMap(atom -> Arrays.stream(atom.getTerms()))
                 .collect(Collectors.toSet());

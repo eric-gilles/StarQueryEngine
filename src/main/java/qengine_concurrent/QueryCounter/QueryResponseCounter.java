@@ -2,11 +2,11 @@ package qengine_concurrent.QueryCounter;
 
 import com.google.common.collect.Iterators;
 import org.eclipse.rdf4j.rio.RDFFormat;
-import qengine.model.RDFAtom;
-import qengine.model.StarQuery;
-import qengine.parser.RDFAtomParser;
-import qengine.parser.StarQuerySparQLParser;
-import qengine.storage.RDFHexaStore;
+import qengine_concurrent.model.RDFAtom;
+import qengine_concurrent.model.StarQuery;
+import qengine_concurrent.parser.RDFAtomParser;
+import qengine_concurrent.parser.StarQuerySparQLParser;
+import qengine_concurrent.storage.RDFHexaStore;
 
 import java.io.*;
 import java.util.*;
