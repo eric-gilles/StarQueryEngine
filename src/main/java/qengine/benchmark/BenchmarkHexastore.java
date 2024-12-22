@@ -40,10 +40,15 @@ public class BenchmarkHexastore {
             System.out.println("3. 2M");
             System.out.println("Enter the RDF Data Set to use : ");
             String choice = scanner.nextLine();
+            System.out.println("Do you want to enable preprocessing? (yes/no): ");
+            String preprocessingChoice = scanner.nextLine();
+            Boolean preprocessing = preprocessingChoice.equalsIgnoreCase("yes")
+                    || preprocessingChoice.equalsIgnoreCase("y");
+
             switch (choice) {
-                case "1" -> handlebenchmark(DATA_100K, queryDir, true);
-                case "2" -> handlebenchmark(DATA_500K, queryDir, true);
-                case "3" -> handlebenchmark(DATA_2M, queryDir, true);
+                case "1" -> handlebenchmark(DATA_100K, queryDir, preprocessing);
+                case "2" -> handlebenchmark(DATA_500K, queryDir, preprocessing);
+                case "3" -> handlebenchmark(DATA_2M, queryDir, preprocessing);
                 default -> {
                     System.out.println("Invalid choice");
                     exit(1);
@@ -56,7 +61,13 @@ public class BenchmarkHexastore {
         System.gc(); // Suggestion de nettoyage mémoire
     }
 
-    private static void handlebenchmark(String dataset, String queryDir, Boolean prepocessing) throws IOException {
+    /**
+     * Handle the benchmarking with the chosen dataset
+     * @param dataset Dataset to use for benchmarking
+     * @param queryDir Directory containing the queries
+     * @param preprocessing Boolean to enable or disable preprocessing
+     */
+    private static void handlebenchmark(String dataset, String queryDir, Boolean preprocessing) throws IOException {
         System.out.println("## Benchmarking RDFHexaStore with " + dataset + " dataset ##\n\n");
 
         List<RDFAtom> rdfAtoms = Utils.parseRDFData(dataset);
@@ -69,18 +80,22 @@ public class BenchmarkHexastore {
             factBase.add(atom);
         }
 
-        Map<String, Map<String, Long>> results = benchmark(store, factBase, queryDir, prepocessing);
+        Map<String, Map<String, Long>> results = benchmark(store, factBase, queryDir, preprocessing);
 
         String benchmarkResultFile = saveBenchmarkResultsToFile(results, dataset);
         System.out.println("\n\n## Benchmarking Complete and Results saved in the file : " + benchmarkResultFile + " ##");
     }
 
-    private static Map<String, Map<String, Long>> benchmark(
-            RDFHexaStore store,
-            FactBase factBase,
-            String queriesDir,
-            Boolean preprocessing
-    ) throws IOException {
+    /**
+     * Benchmark the RDFHexaStore with the given queries and store
+     * @param store RDFHexaStore
+     * @param factBase Integraal FactBase
+     * @param queriesDir Directory containing the queries
+     * @param preprocessing Boolean to enable or disable preprocessing
+     * @return Map of results for each query
+     */
+    private static Map<String, Map<String, Long>> benchmark(RDFHexaStore store, FactBase factBase, String queriesDir,
+            Boolean preprocessing) throws IOException {
         Map<String, List<StarQuery>> queryFiles = Utils.getQueriesFromDir(queriesDir);
         if (preprocessing) {
             for (Map.Entry<String, List<StarQuery>> entryQuery: queryFiles.entrySet()) {
@@ -89,7 +104,6 @@ public class BenchmarkHexastore {
                 entryQuery.setValue(queries);
             }
         }
-
 
         Map<String, Map<String, Long>> results = new HashMap<>();
         for (Map.Entry<String, List<StarQuery>> entryQuery: queryFiles.entrySet()) {
@@ -113,6 +127,12 @@ public class BenchmarkHexastore {
         return results;
     }
 
+    /**
+     * Save the benchmark results to a file
+     * @param results Map of results for each query
+     * @param dataset Dataset used for benchmarking
+     * @return Path of the file where the results are saved
+     */
     private static String saveBenchmarkResultsToFile(Map<String, Map<String, Long>> results, String dataset) {
         // save benchmark results in a file
         LocalDateTime date = LocalDateTime.now();
@@ -175,7 +195,10 @@ public class BenchmarkHexastore {
         return benchmarkResultFile;
     }
 
-
+    /**
+     * Get the computer information
+     * @return String containing the computer information
+     */
     public static String getComputerInfo() {
         StringBuilder infos = new StringBuilder();
         SystemInfo systemInfo = new SystemInfo();
