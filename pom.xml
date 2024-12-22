@@ -149,13 +149,14 @@
 			</exclusions>
 		</dependency>
 
+		<!-- LOGGING -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.4.11</version>
 		</dependency>
 
-
+		<!-- RDF4J -->
 		<dependency>
 			<groupId>org.eclipse.rdf4j</groupId>
 			<artifactId>rdf4j-client</artifactId>
@@ -168,10 +169,18 @@
 			</exclusions>
 		</dependency>
 
+		<!-- OSHI -->
 		<dependency>
 			<groupId>com.github.oshi</groupId>
 			<artifactId>oshi-core</artifactId>
 			<version>6.1.6</version>
+		</dependency>
+
+		<!-- CLI -->
+		<dependency>
+			<groupId>info.picocli</groupId>
+			<artifactId>picocli</artifactId>
+			<version>4.7.6</version>
 		</dependency>
 
 		<!-- TESTS UNITAIRES -->
